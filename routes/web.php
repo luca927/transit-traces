@@ -2,9 +2,18 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
+use App\Models\Place;
 
 Route::get('/', function () {
     return view('welcome');
+});
+
+Route::get('/places', function () {
+    return response()->json(Place::all());
+});
+
+Route::get('/mappa', function () {
+    return view('mappa');
 });
 
 Route::get('/dashboard', function () {
