@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@11ty/eleventy-plugin-i18n-translations@latest/i18n.js"></script>
     <style>
-    .language-switcher { position: fixed; top: 20px; right: 20px; z-index: 1001; background: rgba(230,126,34,0.9); padding: 10px; border-radius: 25px; }
+    .language-switcher { position: fixed; top: 20px; right: 20px; z-index: 1001; padding: 10px; border-radius: 25px; }
     .language-switcher button { background: none; border: none; color: white; font-size: 16px; margin: 0 5px; cursor: pointer; font-family: Georgia, serif; }
     .language-switcher button.active { font-weight: bold; text-decoration: underline; }
     </style>
@@ -15,11 +15,9 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
-            font-family: 'Georgia', serif; 
-            background: #f4e8d9; 
-            color: #333; 
-            line-height: 1.6;
-            overflow-x: hidden;
+            font-family: 'Merriweather', serif;
+            color: #1e1e1e;
+            background-color: #f7f3ec;
         }
         .hero {
             height: 100vh;
@@ -230,7 +228,7 @@ function setLanguage(lang) {
         italianoBtn.style.border = '1px solid #000000';
     }
     
-    // ✅ TRADUCI TUTTI I TESTI (IL PROBLEMA ERA QUI!)
+    // ✅ TRADUCI TUTTI I TESTI
     if (lang === 'en') {
         document.querySelector('.hero h1').textContent = 'Transit Traces';
         document.querySelector('.hero p').innerHTML = 'Daily traces in Domiz refugee camp, Northern Iraq.<br>Drawings, video, photography and audio to know Ahmed, Fatma and life beyond humanitarian posters.';

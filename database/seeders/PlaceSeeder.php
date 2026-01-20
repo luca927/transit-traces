@@ -13,18 +13,29 @@ class PlaceSeeder extends Seeder
      */
     public function run(): void
     {
-         Place::create([
-            'name' => 'Domiz Entrance',
-            'latitude' => 36.8,
-            'longitude' => 43.1,
-            'description' => 'Main camp entrance'
-        ]);
-        
-        Place::create([
-            'name' => 'Ahmed Bird Stall',
-            'latitude' => 36.81,
-            'longitude' => 43.11,
-            'description' => '13yo bird entrepreneur'
-        ]);
+       Place::create([
+        'name' => 'Domiz Entrance',
+        'latitude' => 36.80,
+        'longitude' => 43.10,
+        'description' => 'Ingresso campo',
+        'video_url' => 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'
+    ]);
+
+    Place::create([
+        'name' => 'Ahmed Stall',
+        'latitude' => 36.81,
+        'longitude' => 43.11,
+        'description' => 'Banco uccelli Ahmed',
+        'video_url' => 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4'
+    ]);
+
+    Place::create([
+        'name' => 'Fatma Spot',
+        'latitude' => 36.82,
+        'longitude' => 43.12,
+        'description' => 'Punto Fatma',
+        'video_url' => 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4'
+    ]);
+
     }
 }

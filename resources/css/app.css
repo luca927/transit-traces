@@ -1,3 +1,24 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+.custom-marker {
+    /* Rimuove lo sfondo di default di Leaflet */
+    background: transparent;
+    border: none;
+}
+
+.custom-marker svg {
+    display: block;
+}
+
+/* Per la home: contenitore icona */
+.icon-inline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-inline svg {
+    width: 32px;
+    height: 32px;
+}
