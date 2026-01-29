@@ -2,10 +2,6 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Models\Place;
+use App\Http\Controllers\Api\PlaceController;
 
-Route::middleware('web')->group(function () {
-    Route::get('/places', function () {
-        return response()->json(Place::all());
-    });
-});
+Route::get('/places', [PlaceController::class, 'index']);
