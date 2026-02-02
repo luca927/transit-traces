@@ -5,6 +5,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('css/map.css') }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <style>
         #map { height: 100vh; width: 100%; }
@@ -329,6 +330,64 @@ header a:focus {
     opacity: 1;
 }
 
+/* Stile del Drawer Laterale */
+.story-drawer {
+    position: fixed;
+    top: 0;
+    right: -100%; /* Inizia fuori dallo schermo */
+    width: 450px;
+    max-width: 90vw;
+    height: 100vh;
+    background: #0e0c0b; /* Nero profondo */
+    z-index: 3000;
+    transition: right 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+    color: #e2d9d0;
+    overflow-y: auto;
+}
+
+.story-drawer.open {
+    right: 0; /* Scivola dentro */
+}
+
+.drawer-header {
+    padding: 20px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.close-drawer {
+    background: none;
+    border: none;
+    color: #ff7e00;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.drawer-body {
+    padding: 0 40px 40px 40px;
+}
+
+.drawer-body h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    color: white;
+    margin-bottom: 20px;
+}
+
+.drawer-body p {
+    line-height: 1.8;
+    font-size: 1.1rem;
+    color: #ccc;
+}
+
+.story-image {
+    width: 100%;
+    margin: 25px 0;
+    border-radius: 5px;
+    filter: sepia(0.2) contrast(1.1);
+}
+
 </style>
 
 </head>
@@ -378,6 +437,14 @@ header a:focus {
     <div id="map"></div>
     <!-- audio mappa -->
     <audio id="ambient-audio" src="/audio/ambient.mp3" loop></audio>
+
+<div id="story-drawer" class="story-drawer">
+    <div class="drawer-header">
+        <button class="close-drawer" onclick="closeStory()"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="drawer-content" class="drawer-body">
+        </div>
+</div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="{{ asset('js/map.js') }}"></script>

@@ -11,9 +11,10 @@ class PlaceController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function getPlaces(Request $request)
     {
         return Place::all();
+        return response()->json(['places' => $places], 201);
     }
 
     /**
@@ -21,7 +22,14 @@ class PlaceController extends Controller
      */
     public function store(Request $request)
     {
-        //
+    $place = new Place();
+    $place->name = $request->name;
+    $place->lat = $request->lat; // Prende 'lat' dal JS e lo salva come 'latitude'
+    $place->lng = $request->lng;
+    $place->description = $request->description;
+    $place->save();
+
+    return response()->json(['place' => $place]);
     }
 
     /**

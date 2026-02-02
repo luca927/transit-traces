@@ -6,15 +6,23 @@ let currentLang = 'it';
 // =========================
 
 function loadPlaces() {
-    fetch('/api/places')
-        .then(r => r.json())
-        .then(places => {
-            allPlaces = places;
-            filterPlaces();
-        })
-        .catch(err => {
-            console.error('Errore caricamento luoghi:', err);
-            document.getElementById('stats').textContent = '❌ Errore caricamento';
+    const filter = document.getElementById('filter').value;
+    const search = document.getElementById('search').value;
+    //Assicurati che questo URL corrisponda alla tua rotta Laravel
+   fetch('/api/places')
+        .then(res => res.json())
+        .then(data => {
+            placesLayer.clearLayers(); // Puliamo i vecchi marker
+            data.forEach(place => {
+                // USA I NOMI DEL TUO DATABASE (lat/lng o latitude/longitude)
+                if (place.lat && place.lng) {
+                    const marker = L.marker([place.lat, place.lng]).addTo(placesLayer);
+                    
+                    marker.on('click', () => {
+                        openStory(place); 
+                    });
+                }
+            });
         });
 }
 
@@ -103,6 +111,34 @@ function setLanguage(lang) {
     }
     
     filterPlaces();
+}
+
+function openStory(placeData) {
+    const drawer = document.getElementById('story-drawer');
+    const content = document.getElementById('drawer-content');
+
+    // Usiamo una foto di backup se placeData.image non esiste
+    const imageUrl = placeData.image ? placeData.image : '/images/default-placeholder.jpg';
+
+    content.innerHTML = `
+        <span style="color: #ff7e00; letter-spacing: 3px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase;">
+            ${placeData.type || 'Luogo'}
+        </span>
+        <h2>${placeData.name || 'Senza Nome'}</h2>
+        
+        <div class="image-container">
+            <img src="${imageUrl}" class="story-image" onerror="this.style.display='none'">
+        </div>
+        
+        <p>${placeData.description || 'Nessuna descrizione disponibile.'}</p>
+    `;
+
+    drawer.classList.add('open');
+}
+
+function closeStory() {
+    const drawer = document.getElementById('story-drawer');
+    drawer.classList.remove('open');
 }
 
 // =========================

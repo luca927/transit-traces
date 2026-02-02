@@ -72,3 +72,56 @@ map.on('popupclose', e => {
         video.pause();
     }
 });
+
+function addInteractivePlace(lat, lng, data) {
+    const marker = L.marker([lat, lng]).addTo(placesLayer);
+
+    marker.on('click', () => {
+        // Invece di aprire un popup, apriamo il drawer laterale
+        openStory(data);
+        
+        // Opzionale: centra la mappa sul punto cliccato con un effetto fluido
+        map.flyTo([lat, lng], 15, { duration: 1.5 });
+    });
+}
+
+// Quando clicchi sulla mappa, si apre un form o ti chiede i dati
+map.on('contextmenu', function(e) {
+    const name = prompt("Nome del nuovo luogo:");
+    if (!name) return;
+
+    const lat = e.latlng.lat;
+    const lng = e.latlng.lng;
+
+    fetch('/api/places/store', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify({
+            name: name,
+            lat: lat,
+            lng: lng,
+            description: "Aggiunto via mappa"
+        })
+    })
+    .then(res => {
+        if (!res.ok) return res.text().then(t => { throw t });
+        return res.json();
+    })
+    .then(data => {
+        // Controlliamo se 'data' e 'data.place' esistono prima di leggere 'name'
+    if (data && data.place) {
+        alert("Luogo salvato: " + data.place.name);
+    } else {
+        alert("Luogo salvato correttamente!");
+    }
+    loadPlaces();
+    })
+    .catch(err => {
+        alert("Errore durante il salvataggio! Controlla i log.");
+        console.error(err);
+    });
+});
