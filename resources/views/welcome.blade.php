@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Transit Traces : Domiz Camp</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
@@ -17,7 +18,6 @@
             overflow-x: hidden;
         }
 
-        /* HEADER & LINGUE */
         header {
             position: fixed; top: 0; left: 0; right: 0; 
             padding: 2rem; z-index: 2000; 
@@ -31,7 +31,6 @@
             transition: 0.3s; font-weight: bold; letter-spacing: 1px;
         }
 
-        /* HERO SECTION */
         .hero {
             height: 100vh;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -47,7 +46,6 @@
             font-weight: 900; line-height: 0.8; margin-bottom: 2rem; color: #fff;
         }
 
-        /* PULSANTI ARANCIONI */
         .btn-orange {
             background-color: #ff7e00; color: white; padding: 20px 50px;
             border: none; border-radius: 5px; font-weight: 700;
@@ -61,7 +59,6 @@
             box-shadow: 0 10px 20px rgba(255, 126, 0, 0.4);
         }
 
-        /* CARD DINAMICHE */
         .card-container {
             display: flex; width: 100%; height: 85vh; 
             background: #000; overflow: hidden; border-top: 1px solid rgba(255,255,255,0.1);
@@ -87,7 +84,6 @@
         .card-tag { color: #c4a47c; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 4px; display: block; margin-bottom: 10px;}
         .card-title-text { font-family: 'Playfair Display', serif; font-size: 2.8rem; line-height: 1; margin-bottom: 15px; }
 
-        /* INTRO */
         .intro { padding: 120px 20px; text-align: center; max-width: 900px; margin: 0 auto; }
         .intro h2 { font-family: 'Playfair Display'; font-size: 3.5rem; margin-bottom: 30px; }
         .intro p { font-size: 1.4rem; line-height: 1.8; color: #aaa; }
@@ -97,12 +93,12 @@
 
 <header>
     <div style="display: flex; gap: 15px;">
-        <a href="#" style="color: white; opacity: 0.7;"><i class="fab fa-facebook-f"></i></a>
-        <a href="#" style="color: white; opacity: 0.7;"><i class="fab fa-twitter"></i></a>
+        <a href="https://facebook.com/transittraces" target="_blank" style="color: white; opacity: 0.7;"><i class="fab fa-facebook-f"></i></a>
+        <a href="https://twitter.com/transittraces" target="_blank" style="color: white; opacity: 0.7;"><i class="fab fa-twitter"></i></a>
     </div>
     <div class="language-switcher">
-        <a href="#" id="btn-it" onclick="setLanguage('it')">ITALIANO</a>
-        <a href="#" id="btn-en" onclick="setLanguage('en')">ENGLISH</a>
+        <a href="#" id="btn-it" onclick="setLanguage('it'); return false;">ITALIANO</a>
+        <a href="#" id="btn-en" onclick="setLanguage('en'); return false;">ENGLISH</a>
     </div>
 </header>
 
@@ -154,13 +150,11 @@
 </section>
 
 <script>
-    // Smooth Scroll
     document.querySelector('a[href="#map"]').addEventListener('click', function(e) {
         e.preventDefault();
         document.getElementById('map').scrollIntoView({ behavior: 'smooth' });
     });
 
-    // LOGICA TRADUZIONE (Il tuo script originale integrato)
     function setLanguage(lang) {
         const itBtn = document.getElementById('btn-it');
         const enBtn = document.getElementById('btn-en');
@@ -172,12 +166,18 @@
             document.getElementById('hero-desc').innerHTML = 'Tracce quotidiane nel campo profughi di Domiz, Iraq del Nord.';
             document.getElementById('hero-cta').textContent = 'Esplora Domiz Camp';
             document.getElementById('intro-title').textContent = 'Benvenuti';
+            document.getElementById('intro-text').textContent = 'Un documentario interattivo sulla vita quotidiana nel campo profughi siriano di Domiz. Con circa 64.000 rifugiati, Domiz è diventata una mini-società.';
             document.getElementById('map-title').textContent = 'Entra nella Mappa';
             document.getElementById('map-btn').textContent = 'ESPLORA IL DOCUMENTARIO';
-            // Card IT
+            document.getElementById('tag-1').textContent = 'Percorso 01';
+            document.getElementById('tag-2').textContent = 'Percorso 02';
+            document.getElementById('tag-3').textContent = 'Percorso 03';
             document.getElementById('title-1').textContent = 'Costruzione';
             document.getElementById('title-2').textContent = 'Imprenditori';
             document.getElementById('title-3').textContent = 'Vita Quotidiana';
+            document.getElementById('desc-1').textContent = 'Da tende di plastica a case di mattoni.';
+            document.getElementById('desc-2').textContent = 'Le storie di Ahmed e Fatma.';
+            document.getElementById('desc-3').textContent = 'La routine oltre l\'emergenza.';
         } else {
             enBtn.style.background = '#ff7e00'; enBtn.style.border = 'none';
             itBtn.style.background = 'transparent'; itBtn.style.border = '1px solid white';
@@ -185,16 +185,21 @@
             document.getElementById('hero-desc').innerHTML = 'Daily traces in Domiz refugee camp, Northern Iraq.';
             document.getElementById('hero-cta').textContent = 'Explore Domiz Camp';
             document.getElementById('intro-title').textContent = 'Welcome';
+            document.getElementById('intro-text').textContent = 'An interactive documentary about daily life in the Syrian refugee camp of Domiz. With about 64,000 refugees, Domiz has become a mini-society.';
             document.getElementById('map-title').textContent = 'Enter the Map';
             document.getElementById('map-btn').textContent = 'EXPLORE THE DOCUMENTARY';
-            // Card EN
+            document.getElementById('tag-1').textContent = 'Route 01';
+            document.getElementById('tag-2').textContent = 'Route 02';
+            document.getElementById('tag-3').textContent = 'Route 03';
             document.getElementById('title-1').textContent = 'Construction';
             document.getElementById('title-2').textContent = 'Entrepreneurs';
             document.getElementById('title-3').textContent = 'Daily Life';
+            document.getElementById('desc-1').textContent = 'From plastic tents to brick houses.';
+            document.getElementById('desc-2').textContent = 'The stories of Ahmed and Fatma.';
+            document.getElementById('desc-3').textContent = 'Routine beyond emergency.';
         }
     }
 
-    // Init
     setLanguage('it');
 </script>
 </body>

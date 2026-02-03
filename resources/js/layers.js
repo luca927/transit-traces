@@ -42,7 +42,7 @@ const spotIcon = L.divIcon({
 });
 
 // =========================
-// FUNZIONE SCELTA ICONA
+// FUNZIONI (DEFINISCI PRIMA DI USARE)
 // =========================
 
 function getIconByType(type) {
@@ -62,10 +62,6 @@ function getIconByType(type) {
             return spotIcon;
     }
 }
-
-// =========================
-// CREA POPUP AVANZATO
-// =========================
 
 function createPopupContent(place) {
     let content = `
@@ -128,15 +124,16 @@ function createPopupContent(place) {
     return content;
 }
 
-// =========================
-// AGGIUNGI MARKER
-// =========================
-
 function addIllustrationMarker(lat, lng, place) {
+    if (typeof window.placesLayer === 'undefined') {
+        console.error('placesLayer non definito!');
+        return;
+    }
+
     const icon = getIconByType(place.type || 'spot');
     
     const marker = L.marker([lat, lng], { icon })
-        .addTo(placesLayer)
+        .addTo(window.placesLayer)
         .bindPopup(createPopupContent(place), {
             maxWidth: 400,
             className: 'custom-popup'
@@ -144,8 +141,20 @@ function addIllustrationMarker(lat, lng, place) {
     
     marker.on('click', () => {
         console.log(`Cliccato su: ${place.name}`);
-        map.setView([lat, lng], Math.max(map.getZoom(), 12));
+        if (window.map) {
+            window.map.setView([lat, lng], Math.max(window.map.getZoom(), 12));
+        }
     });
     
     return marker;
 }
+
+// =========================
+// RENDI GLOBALI
+// =========================
+
+window.getIconByType = getIconByType;
+window.createPopupContent = createPopupContent;
+window.addIllustrationMarker = addIllustrationMarker;
+
+console.log('✅ Layers.js caricato - funzioni esportate');

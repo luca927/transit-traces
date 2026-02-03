@@ -2,11 +2,12 @@
 <html>
 <head>
     <title>Transit Traces 🏕️ Domiz Camp</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    @vite(['resources/js/app.js', 'resources/css/app.css'])
+ 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('css/map.css') }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
+    
     <style>
         #map { height: 100vh; width: 100%; }
         .controls {
@@ -388,6 +389,117 @@ header a:focus {
     filter: sepia(0.2) contrast(1.1);
 }
 
+/* Timeline laterale */
+.timeline {
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    max-width: 300px;
+    max-height: 80vh;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.timeline h3 {
+    margin: 0 0 15px 0;
+    color: #667eea;
+    font-size: 1.1rem;
+}
+
+.timeline-item {
+    padding: 12px;
+    margin: 8px 0;
+    border-left: 3px solid #e0e0e0;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.timeline-item:hover {
+    border-left-color: #667eea;
+    background: #f5f5f5;
+    transform: translateX(-5px);
+}
+
+.timeline-item.active {
+    border-left-color: #667eea;
+    background: #f0f4ff;
+}
+
+.timeline-item h4 {
+    margin: 0 0 5px 0;
+    color: #333;
+    font-size: 0.95rem;
+}
+
+.timeline-item p {
+    margin: 0;
+    color: #999;
+    font-size: 0.85rem;
+}
+
+/* Video player modale */
+.video-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+}
+
+.video-modal.active {
+    display: flex;
+}
+
+.video-container {
+    position: relative;
+    max-width: 90%;
+    min-width: 300px;
+    max-height: 90%;
+}
+
+.video-container video {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+}
+
+.close-video {
+    position: absolute;
+    top: -40px;
+    right: 0;
+    background: white;
+    color: #333;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+.journey-btn {
+    flex: 1 1 45%;
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+.journey-btn.audio {
+    background: #48bb78;
+}
+
 </style>
 
 </head>
@@ -422,18 +534,25 @@ header a:focus {
 </div>
     </header>
 
-    <div class="controls">
-        <h3 id="controls-title">🏕️ Transit Traces</h3>
-        <input type="text" id="search" placeholder="Cerca luoghi...">
-        <select id="filter" onchange="filterPlaces()">
-    <option value="">Tutti i luoghi</option>
-    <option value="spot">🔴 Punti di interesse</option>
-    <option value="tent">⛺ Campi</option>
-    <option value="stall">🏪 Strutture</option>
-</select>
-        <button onclick="loadPlaces()">🔄 Aggiorna</button>
-        <div class="stats" id="stats">Caricamento...</div>
-    </div>
+   <div class="controls">
+    <h3 id="controls-title">🗺️ Mappa Balcani</h3>
+    <input type="text" id="search" placeholder="Cerca luoghi...">
+    <select id="filter">
+        <option value="">Tutti i luoghi</option>
+        <option value="spot">🔴 Punti di interesse</option>
+        <option value="tent">⛺ Campi</option>
+        <option value="stall">🏪 Strutture</option>
+    </select>
+    <button onclick="loadPlaces()">🔄 Aggiorna</button>
+    
+    <!-- BOTTONE PLAY/PAUSA CON ID -->
+    <button id="play-journey-btn" onclick="animateJourney()" 
+            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        ▶️ Play Viaggio
+    </button>
+    
+    <div class="stats" id="stats">Caricamento...</div>
+</div>
     <div id="map"></div>
     <!-- audio mappa -->
     <audio id="ambient-audio" src="/audio/ambient.mp3" loop></audio>
@@ -445,10 +564,22 @@ header a:focus {
     <div id="drawer-content" class="drawer-body">
         </div>
 </div>
+<!-- Timeline laterale -->
+<div class="timeline">
+    <h3>🗓️ Timeline del Viaggio</h3>
+    <div id="timeline-content"></div>
+</div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="{{ asset('js/map.js') }}"></script>
-<script src="{{ asset('js/layers.js') }}"></script>
-<script src="{{ asset('js/narrative.js') }}"></script>
+<!-- Video modale -->
+<div class="video-modal" id="video-modal">
+    <div class="video-container">
+        <button class="close-video" onclick="closeFullVideo()">✕ Chiudi</button>
+        <video id="full-video" controls autoplay>
+            <source src="" type="video/mp4">
+        </video>
+    </div>
+</div>
+<div class="timeline-container"></div>
+
 </body>
 </html>
