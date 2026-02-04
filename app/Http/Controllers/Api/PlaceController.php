@@ -13,8 +13,8 @@ class PlaceController extends Controller
      */
     public function getPlaces(Request $request)
     {
-        return Place::all();
-        return response()->json(['places' => $places], 201);
+        $places = Place::all();
+        return response()->json($places);
     }
 
     /**
@@ -27,6 +27,8 @@ class PlaceController extends Controller
     $place->lat = $request->lat; // Prende 'lat' dal JS e lo salva come 'latitude'
     $place->lng = $request->lng;
     $place->description = $request->description;
+    $place->video_url = $request->video_url;
+    $place->type = $request->type ?? 'spot'; // Default a 'spot' se non specificato
     $place->save();
 
     return response()->json(['place' => $place]);

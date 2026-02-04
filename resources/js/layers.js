@@ -47,21 +47,17 @@ const spotIcon = L.divIcon({
 
 function getIconByType(type) {
     switch(type) {
-        case 'tent':
-        case 'tenda':
         case 'campo':
             return tentIcon;
-        case 'stall':
-        case 'negozio':
         case 'struttura':
+        case 'natura':
             return stallIcon;
-        case 'spot':
-        case 'punto':
         case 'città':
         default:
             return spotIcon;
     }
 }
+
 
 function createPopupContent(place) {
     let content = `
@@ -131,21 +127,21 @@ function addIllustrationMarker(lat, lng, place) {
     }
 
     const icon = getIconByType(place.type || 'spot');
-    
+
     const marker = L.marker([lat, lng], { icon })
         .addTo(window.placesLayer)
         .bindPopup(createPopupContent(place), {
             maxWidth: 400,
             className: 'custom-popup'
         });
-    
+
     marker.on('click', () => {
         console.log(`Cliccato su: ${place.name}`);
         if (window.map) {
             window.map.setView([lat, lng], Math.max(window.map.getZoom(), 12));
         }
     });
-    
+
     return marker;
 }
 

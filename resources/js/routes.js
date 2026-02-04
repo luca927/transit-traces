@@ -1,6 +1,4 @@
-// =========================
 // DEFINISCI IL PERCORSO DEL VIAGGIO
-// =========================
 
 var journeyRoute = [
     {
@@ -52,18 +50,13 @@ var journeyRoute = [
     }
 ];
 
-// =========================
 // VARIABILI GLOBALI ANIMAZIONE
-// =========================
 
 let animationInterval = null;
 let isAnimating = false;
 
-// ... (resto del codice)
-
-// =========================
 // ANIMAZIONE DEL PERCORSO (con controllo pausa)
-// =========================
+
 
 function animateJourney() {
     if (typeof window.map === 'undefined') {
