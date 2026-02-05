@@ -65,3 +65,30 @@ if (typeof document.getElementById('map') === 'undefined') {
         }
     });
 }
+
+const zoneAudio = {
+    balkans: '/audio/balkans-ambient.mp3',
+    border: '/audio/border-tension.mp3',
+    camp: '/audio/camp-voices.mp3'
+};
+
+map.on('moveend', function() {
+    const center = map.getCenter();
+    const zone = detectZone(center);
+    changeAmbientAudio(zone);
+});
+
+function detectZone(coords) {
+    // Logica per determinare la zona
+    if (coords.lat > 44) return 'border';
+    if (coords.lat < 42) return 'balkans';
+    return 'camp';
+}
+
+function changeAmbientAudio(zone) {
+    const audio = document.getElementById('ambient-audio');
+    if (audio.src !== zoneAudio[zone]) {
+        audio.src = zoneAudio[zone];
+        audio.play();
+    }
+}

@@ -5,6 +5,9 @@ import Alpine from 'alpinejs';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-polylinedecorator';
+// Dopo le altre import
+import './storytelling.js';
+import './heatmap.js';
 
 // Rendi L globale
 window.L = L;

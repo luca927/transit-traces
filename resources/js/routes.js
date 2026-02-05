@@ -353,6 +353,68 @@ function populateTimeline() {
     });
 }
 
+function createTimelinePopup() {
+    // Pulisci vecchi elementi
+    document.querySelectorAll('.timeline-popup, .timeline-control').forEach(el => el.remove());
+    
+    // 1. BUTTON arancione basso
+    const btn = document.createElement('div');
+    btn.className = 'timeline-control';
+    btn.innerHTML = '🚌 Tappe Viaggio';
+    document.body.appendChild(btn);
+    
+    // 2. POPUP container
+    const popup = document.createElement('div');
+    popup.className = 'timeline-popup';
+    popup.id = 'timelinePopup';
+    
+    // 3. HEADER + contenuto tappe ORIGINALI
+    popup.innerHTML = `
+        <div style="background: linear-gradient(135deg, #e67e22, #d35400); color: white; padding: 15px; position: sticky; top: 0;">
+            <div style="display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: bold;">
+                🚌 Tappe del Viaggio
+                <span id="closePopup" style="margin-left: auto; font-size: 24px; cursor: pointer;">×</span>
+            </div>
+        </div>
+        <div id="realTimelineContent" style="padding: 20px; max-height: 300px; overflow-y: auto;">
+            <!-- ← QUI VANNO LE TUE TAPPE ORIGINALI -->
+            Caricamento tappe...
+        </div>
+    `;
+    document.body.appendChild(popup);
+    
+    // 4. DOPO 500ms → popola con tappe REALI
+    setTimeout(() => {
+        const content = document.getElementById('realTimelineContent');
+        // Copia contenuto dalla tua timeline originale
+        const originalTimeline = document.querySelector('.timeline, .leaflet-timeline-control, [class*="timeline"]');
+        
+        if (originalTimeline && originalTimeline.innerHTML) {
+            content.innerHTML = originalTimeline.innerHTML; // ← TAPPE REALI!
+            console.log('✅ Tappe originali copiate nel popup');
+        } else {
+            content.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #666;">
+                    <div style="font-size: 24px; margin-bottom: 10px;">🚌</div>
+                    Nessuna tappa caricata
+                </div>
+            `;
+        }
+    }, 500);
+    
+    // 5. CLICK events
+    btn.onclick = (e) => { e.stopPropagation(); popup.classList.toggle('active'); };
+    
+    document.getElementById('closePopup').onclick = () => popup.classList.remove('active');
+    
+    document.onclick = (e) => {
+        if (!popup.contains(e.target) && !btn.contains(e.target)) {
+            popup.classList.remove('active');
+        }
+    };
+}
+
+
 function playFullVideo(videoUrl) {
     const modal = document.getElementById('video-modal');
     const video = document.getElementById('full-video');
@@ -376,40 +438,32 @@ function closeFullVideo() {
 }
 
 function addLayerControls() {
-    if (typeof window.map === 'undefined' || typeof L === 'undefined') {
-        setTimeout(addLayerControls, 500);
-        return;
-    }
-
-    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    });
+    if (typeof window.map === 'undefined' || window.layerControlAdded) return;
     
-    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: '© Esri'
-    });
-    
-    const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenTopoMap'
-    });
+    // Mappe base
+    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}');
+    const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png');
 
     const baseLayers = {
-        "🗺️ Mappa Standard": osmLayer,
-        "🛰️ Satellite": satelliteLayer,
+        "🗺️ Standard": osmLayer,
+        "🛰️ Satellite": satelliteLayer, 
         "🌍 Terreno": topoLayer
     };
-    
+
     const overlays = {};
+    if (window.placesLayer) overlays["📍 Luoghi"] = window.placesLayer;
+    if (window.citiesLayer) overlays["🏙️ Città"] = window.citiesLayer;
     
-    if (typeof window.placesLayer !== 'undefined') {
-        overlays["📍 Luoghi"] = window.placesLayer;
-    }
-    if (typeof window.citiesLayer !== 'undefined') {
-        overlays["🏙️ Città"] = window.citiesLayer;
-    }
+    // UN SOLO layer control
+    window.layerControl = L.control.layers(baseLayers, overlays, {
+        position: 'topright',
+        collapsed: true
+    }).addTo(window.map);
     
-    L.control.layers(baseLayers, overlays).addTo(window.map);
+    window.layerControlAdded = true; // Flag anti-dupe
 }
+
 
 // =========================
 // RENDI GLOBALI
@@ -427,20 +481,6 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         closeFullVideo();
     }
-});
-
-// =========================
-// INIT quando mappa pronta
-// =========================
-
-window.addEventListener('mapReady', () => {
-    console.log('🎉 Routes.js inizializzato');
-    
-    setTimeout(() => {
-        drawJourneyPath();
-        populateTimeline();
-        addLayerControls();
-    }, 500);
 });
 
 console.log('✅ Routes.js caricato - funzioni esportate');
@@ -494,3 +534,43 @@ function moveToNext() {
     currentStep++;
     animationInterval = setTimeout(moveToNext, animationSpeed); // <-- USA QUESTA
 }
+
+// =========================
+// TIMELINE HOVER ESPANDI
+// =========================
+function initTimelineHover() {
+    const timeline = document.querySelector('.timeline');
+    if (!timeline) return;
+    
+    let hoverTimeout;
+    
+    timeline.addEventListener('mouseenter', () => {
+        clearTimeout(hoverTimeout);
+        timeline.style.height = '300px';
+    });
+    
+    timeline.addEventListener('mouseleave', () => {
+        hoverTimeout = setTimeout(() => {
+            timeline.style.height = '50px';
+        }, 1000); // Chiudi dopo 1s se esci
+    });
+    
+    // Chiudi se click fuori
+    document.addEventListener('click', (e) => {
+        if (!timeline.contains(e.target)) {
+            timeline.style.height = '50px';
+        }
+    });
+}
+
+window.addEventListener('mapReady', () => {
+    if (window.routesInited) return;
+    window.routesInited = true;
+    
+    setTimeout(() => {
+        drawJourneyPath();
+        populateTimeline();        // ← LA TUA ORIGINALE!
+        addLayerControls();
+        createTimelinePopup();     // ← Popup con tappe reali
+    }, 800); // +300ms per far caricare tappe
+});
