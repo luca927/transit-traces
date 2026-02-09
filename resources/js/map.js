@@ -1,6 +1,7 @@
 // Aspetta che il DOM sia pronto
-if (typeof document.getElementById('map') === 'undefined') {
+if (!document.getElementById('map')) {
     console.error('Elemento #map non trovato!');
+    return;
 } else {
     // Crea mappa
     window.map = L.map('map', {
@@ -87,8 +88,11 @@ function detectZone(coords) {
 
 function changeAmbientAudio(zone) {
     const audio = document.getElementById('ambient-audio');
-    if (audio.src !== zoneAudio[zone]) {
+    if (!audio) return;
+
+    if (audio.dataset.current !== zoneAudio[zone]) {
         audio.src = zoneAudio[zone];
-        audio.play();
+        audio.dataset.current = zoneAudio[zone];
+        audio.play().catch(() => {});
     }
 }

@@ -3,18 +3,21 @@ var currentLang = 'it';
 
 function loadPlaces() {
     fetch('/api/places')
-        .then(r => r.json())
-        .then(places => {
-            allPlaces = places;
+    .then(r => r.json())
+    .then(places => {
+        allPlaces = places || [];
+        filterPlaces();
+    })
+    .catch(err => {
+        console.error('Errore caricamento places:', err);
+        // fallback: usa cities già definiti
+        if (window.cities) {
+            console.log('✅ Uso cities.js come fallback');
+            allPlaces = [...window.cities];
             filterPlaces();
-        })
-        .catch(err => {
-            console.error('Errore:', err);
-            const stats = document.getElementById('stats');
-            if (stats) {
-                stats.textContent = '❌ Errore caricamento';
-            }
-        });
+        }
+    });
+
 }
 
 function filterPlaces() {
@@ -32,30 +35,43 @@ function filterPlaces() {
     const search = searchEl ? searchEl.value.toLowerCase() : '';
     const filter = filterEl ? filterEl.value : '';
 
+    // Filtra i luoghi
     const filtered = allPlaces.filter(place => {
         const matchesSearch =
             !search ||
-            place.name.toLowerCase().includes(search) ||
+            (place.name && place.name.toLowerCase().includes(search)) ||
             (place.description && place.description.toLowerCase().includes(search));
 
         const matchesFilter = !filter || place.type === filter;
 
-        return matchesSearch && matchesFilter;
+        // Verifica che lat/lng siano numeri validi
+        const validCoords = typeof place.lat === 'number' && typeof place.lng === 'number';
+
+        return matchesSearch && matchesFilter && validCoords;
     });
 
+    // Aggiungi marker
+    const markers = [];
     filtered.forEach(place => {
         if (typeof window.addIllustrationMarker !== 'undefined') {
-            window.addIllustrationMarker(place.lat, place.lng, place);
+            const marker = window.addIllustrationMarker(place.lat, place.lng, place);
+            if (marker) markers.push(marker);
         }
     });
 
-    if (filtered.length > 0 && typeof window.map !== 'undefined') {
-        const group = L.featureGroup(
-            filtered.map(p => L.marker([p.lat, p.lng]))
-        );
-        window.map.fitBounds(group.getBounds().pad(0.1));
+    // Aggiorna la vista della mappa solo se ci sono marker validi
+    if (markers.length > 0 && typeof window.map !== 'undefined') {
+        const group = L.featureGroup(markers);
+        const bounds = group.getBounds();
+        if (bounds.isValid()) {
+            window.map.fitBounds(bounds.pad(0.1));
+        } else {
+            console.warn('⚠️ Bounds non validi, mappa centrata sul default');
+            window.map.setView([43.8564, 18.4131], 7);
+        }
     }
 
+    // Aggiorna contatore
     const statsEl = document.getElementById('stats');
     if (statsEl) {
         const statsText = currentLang === 'it' 
@@ -64,6 +80,8 @@ function filterPlaces() {
         statsEl.textContent = statsText;
     }
 }
+
+
 
 function setLanguage(lang) {
     currentLang = lang;

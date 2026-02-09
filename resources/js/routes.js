@@ -1,576 +1,338 @@
-// DEFINISCI IL PERCORSO DEL VIAGGIO
+// =========================
+// COUNTRIES.JS - COMPLETO + CITIES
+// =========================
 
-var journeyRoute = [
-    {
-        lat: 41.3275, 
-        lng: 19.8187, 
-        name: "Partenza - Tirana",
-        date: "15 Marzo 2024",
-        video: "/assets/videos/tirana.mp4",
-        audio: "/assets/audio/tirana.mp3",
-        story: "Il viaggio inizia dalla capitale albanese, Tirana. Migliaia di persone si preparano ad attraversare i Balcani verso l'Europa occidentale.",
-        type: "spot"
+(() => {
+'use strict';
+
+// =========================
+// CONFIG DATI PAESI
+// =========================
+
+const countries = {
+    bosnia: {
+        name: 'Bosnia ed Erzegovina',
+        name_en: 'Bosnia and Herzegovina',
+        osmRelationId: '2528142',
+        center: [43.9159, 17.6791],
+        color: '#e74c3c',
+        description: 'Un paese segnato dalla guerra, ora crocevia di storie di transito',
+        cities: ['sarajevo', 'bihac'],
+        approximateBounds: [[42.6, 15.7], [45.3, 19.6]]
     },
-    {
-        lat: 42.4304, 
-        lng: 19.2594, 
-        name: "Podgorica - Montenegro",
-        date: "18 Marzo 2024",
-        video: "/assets/videos/montenegro.mp4",
-        story: "Attraversando il Montenegro, il viaggio diventa più difficile. Le montagne e i controlli di frontiera rappresentano le prime vere sfide.",
-        type: "spot"
+    bulgaria: {
+        name: 'Bulgaria',
+        osmRelationId: '186382',
+        center: [42.7339, 25.4858],
+        color: '#f39c12',
+        description: 'Porta d\'ingresso dall\'Est, tappa cruciale del viaggio',
+        cities: ['harmanli'],
+        approximateBounds: [[41.3, 22.4], [44.2, 28.6]]
     },
-    {
-        lat: 43.8564, 
-        lng: 18.4131, 
-        name: "Sarajevo - Bosnia",
-        date: "22 Marzo 2024",
-        video: "/assets/videos/sarajevo.mp4",
-        audio: "/assets/audio/sarajevo.mp3",
-        story: "Sarajevo, una città che conosce bene il dolore della guerra e della migrazione. Qui molti trovano rifugio temporaneo.",
-        type: "spot"
-    },
-    {
-        lat: 44.8154, 
-        lng: 15.8708, 
-        name: "Campo di Bihać",
-        date: "25 Marzo 2024",
-        video: "/assets/videos/bihac.mp4",
-        story: "Il campo profughi di Bihać vicino al confine croato. Migliaia di migranti aspettano qui per settimane, a volte mesi, prima di tentare l'attraversamento.",
-        type: "tent"
-    },
-    {
-        lat: 45.8150, 
-        lng: 15.9819, 
-        name: "Confine Croazia",
-        date: "1 Aprile 2024",
-        video: "/assets/videos/croazia.mp4",
-        story: "Il confine con la Croazia è uno dei più pericolosi. Molti raccontano di respingimenti violenti e abusi da parte delle autorità.",
-        type: "spot"
+    greece: {
+        name: 'Grecia',
+        osmRelationId: '192307',
+        center: [39.0742, 21.8243],
+        color: '#3498db',
+        description: 'Primo approdo in Europa',
+        cities: ['lesvos'],
+        approximateBounds: [[34.9, 19.5], [41.7, 29.6]]
     }
-];
-
-// VARIABILI GLOBALI ANIMAZIONE
-
-let animationInterval = null;
-let isAnimating = false;
-
-// ANIMAZIONE DEL PERCORSO (con controllo pausa)
-
-
-function animateJourney() {
-    if (typeof window.map === 'undefined') {
-        alert('Mappa non ancora caricata!');
-        return;
-    }
-
-    // Se già in animazione, fermala
-    if (isAnimating) {
-        stopAnimation();
-        return;
-    }
-
-    isAnimating = true;
-    updatePlayButton(true); // Aggiorna il bottone
-
-    let currentStep = 0;
-    
-    const movingIcon = L.divIcon({
-        html: `
-            <div style="width: 20px; height: 20px; background: #ff4444; 
-                        border: 3px solid white; border-radius: 50%; 
-                        box-shadow: 0 0 10px rgba(255,68,68,0.5);
-                        animation: pulse 1.5s infinite;">
-            </div>
-            <style>
-                @keyframes pulse {
-                    0%, 100% { transform: scale(1); }
-                    50% { transform: scale(1.3); }
-                }
-            </style>
-        `,
-        className: 'animated-marker',
-        iconSize: [20, 20],
-        iconAnchor: [10, 10]
-    });
-    
-    // Salva il marker per poterlo rimuovere dopo
-    window.movingMarker = L.marker(
-        [journeyRoute[0].lat, journeyRoute[0].lng], 
-        { icon: movingIcon }
-    ).addTo(window.map);
-    
-    function moveToNext() {
-        if (!isAnimating) return; // Controlla se è stato fermato
-        
-        if (currentStep >= journeyRoute.length) {
-            currentStep = 0;
-        }
-        
-        const point = journeyRoute[currentStep];
-        
-        window.movingMarker.setLatLng([point.lat, point.lng]);
-        window.map.setView([point.lat, point.lng], 10, {
-            animate: true,
-            duration: 2
-        });
-        
-        setTimeout(() => {
-            if (!isAnimating) return; // Controlla di nuovo
-            
-            window.movingMarker.bindPopup(createJourneyPopup(point)).openPopup();
-            updateTimelineActive(currentStep);
-        }, 2000);
-        
-        currentStep++;
-        animationInterval = setTimeout(moveToNext, 6000);
-    }
-    
-    moveToNext();
-}
+};
 
 // =========================
-// FERMA ANIMAZIONE
+// STATO
 // =========================
 
-function stopAnimation() {
-    isAnimating = false;
-    
-    // Ferma il timeout
-    if (animationInterval) {
-        clearTimeout(animationInterval);
-        animationInterval = null;
-    }
-    
-    // Rimuovi il marker mobile
-    if (window.movingMarker && window.map) {
-        window.map.removeLayer(window.movingMarker);
-        window.movingMarker = null;
-    }
-    
-    updatePlayButton(false);
-    console.log('⏸️ Animazione fermata');
-}
+const state = {
+    polygons: {},
+    labels: {},
+    cityMarkers: {}, // 🔹 marker delle città visibili
+    activeCountry: null,
+    loading: false,
+    initialized: false,
+    view: 'overview'
+};
 
 // =========================
-// AGGIORNA BOTTONE PLAY/PAUSA
+// LOADING
 // =========================
 
-function updatePlayButton(playing) {
-    const button = document.getElementById('play-journey-btn');
-    if (button) {
-        if (playing) {
-            button.innerHTML = '⏸️ Pausa Viaggio';
-            button.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)';
-        } else {
-            button.innerHTML = '▶️ Play Viaggio';
-            button.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-        }
-    }
-}
+function showLoading() {
+    if (document.getElementById('countries-loading')) return;
 
-// ... (resto del codice)
-
-// =========================
-// RENDI GLOBALI
-// =========================
-
-window.drawJourneyPath = drawJourneyPath;
-window.animateJourney = animateJourney;
-window.stopAnimation = stopAnimation;
-window.populateTimeline = populateTimeline;
-window.playFullVideo = playFullVideo;
-window.closeFullVideo = closeFullVideo;
-window.addLayerControls = addLayerControls;
-
-// ... (resto del codice)
-
-// =========================
-// FUNZIONI (definite PRIMA di essere esportate)
-// =========================
-
-function createJourneyPopup(point) {
-    let content = `
-        <div style="min-width: 300px; font-family: Arial;">
-            <h3 style="margin: 0 0 5px 0; color: #667eea;">
-                ${point.name}
-            </h3>
-            <p style="margin: 5px 0; color: #999; font-size: 0.9rem;">
-                📅 ${point.date}
-            </p>
+    const el = document.createElement('div');
+    el.id = 'countries-loading';
+    el.innerHTML = `
+        <div style="font-size:42px">🌍</div>
+        <div style="font-weight:600">Caricamento confini…</div>
     `;
-    
-    if (point.video) {
-        content += `
-            <video style="width: 100%; margin: 10px 0; border-radius: 8px;" 
-                   controls loop muted autoplay>
-                <source src="${point.video}" type="video/mp4">
-            </video>
-        `;
-    }
-    
-    if (point.audio) {
-        content += `
-            <audio controls style="width: 100%; margin: 10px 0;">
-                <source src="${point.audio}" type="audio/mp3">
-            </audio>
-        `;
-    }
-    
-    if (point.story) {
-        content += `
-            <p style="margin: 10px 0; font-style: italic; color: #555; line-height: 1.6;">
-                ${point.story}
-            </p>
-        `;
-    }
-    
-    if (point.video) {
-        content += `
-            <button onclick="playFullVideo('${point.video}')" 
-                    style="background: #667eea; color: white; border: none; 
-                           padding: 8px 16px; border-radius: 6px; cursor: pointer;
-                           width: 100%; margin-top: 5px;">
-                🎬 Guarda video completo
-            </button>
-        `;
-    }
-    
-    content += `</div>`;
-    return content;
+    el.style.cssText = `
+        position:fixed; inset:0; margin:auto;
+        width:260px; height:140px;
+        background:white; border-radius:18px;
+        display:flex; flex-direction:column;
+        align-items:center; justify-content:center;
+        box-shadow:0 10px 40px rgba(0,0,0,.3);
+        z-index:10000;
+        font-family:system-ui;
+    `;
+    document.body.appendChild(el);
 }
 
-function drawJourneyPath() {
-    if (typeof window.map === 'undefined' || typeof L === 'undefined') {
-        console.log('Mappa non ancora pronta, riprovo...');
-        setTimeout(drawJourneyPath, 500);
-        return;
-    }
-
-    const coords = journeyRoute.map(point => [point.lat, point.lng]);
-    
-    const polyline = L.polyline(coords, {
-        color: '#667eea',
-        weight: 4,
-        opacity: 0.8,
-        smoothFactor: 1,
-        dashArray: '10, 10'
-    }).addTo(window.map);
-    
-    if (typeof L.polylineDecorator !== 'undefined') {
-        const decorator = L.polylineDecorator(polyline, {
-            patterns: [
-                {
-                    offset: 25,
-                    repeat: 100,
-                    symbol: L.Symbol.arrowHead({
-                        pixelSize: 12,
-                        pathOptions: {
-                            fillOpacity: 1,
-                            weight: 0,
-                            color: '#667eea'
-                        }
-                    })
-                }
-            ]
-        }).addTo(window.map);
-    }
-    
-    journeyRoute.forEach((point, index) => {
-        const marker = L.marker([point.lat, point.lng], {
-            icon: window.getIconByType ? window.getIconByType(point.type) : undefined
-        }).addTo(window.map);
-        
-        marker.bindPopup(createJourneyPopup(point));
-        
-        const numberIcon = L.divIcon({
-            html: `<div style="background: #667eea; color: white; width: 24px; height: 24px; 
-                          border-radius: 50%; display: flex; align-items: center; 
-                          justify-content: center; font-weight: bold; border: 2px solid white;
-                          box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
-                        ${index + 1}
-                   </div>`,
-            className: '',
-            iconSize: [24, 24],
-            iconAnchor: [12, 12]
-        });
-        
-        L.marker([point.lat, point.lng], { icon: numberIcon }).addTo(window.map);
-    });
-    
-    console.log('✅ Percorso disegnato sulla mappa');
-    return polyline;
+function hideLoading() {
+    const el = document.getElementById('countries-loading');
+    if (el) el.remove();
 }
 
-function updateTimelineActive(index) {
-    document.querySelectorAll('.timeline-item').forEach(el => 
-        el.classList.remove('active')
-    );
-    
-    const activeItem = document.getElementById(`timeline-${index}`);
-    if (activeItem) {
-        activeItem.classList.add('active');
-        activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-}
+// =========================
+// OSM BOUNDARY
+// =========================
 
-function populateTimeline() {
-    const container = document.getElementById('timeline-content');
-    
-    if (!container) {
-        console.log('Timeline container non trovato');
-        return;
-    }
-    
-    container.innerHTML = '';
-    
-    journeyRoute.forEach((point, index) => {
-        const item = document.createElement('div');
-        item.className = 'timeline-item';
-        item.id = `timeline-${index}`;
-        item.innerHTML = `
-            <h4>${point.name}</h4>
-            <p>${point.date}</p>
-        `;
-        
-        item.onclick = () => {
-            document.querySelectorAll('.timeline-item').forEach(el => 
-                el.classList.remove('active')
-            );
-            item.classList.add('active');
-            
-            if (typeof window.map !== 'undefined') {
-                window.map.setView([point.lat, point.lng], 12);
-            }
-            
-            const marker = L.marker([point.lat, point.lng])
-                .addTo(window.map)
-                .bindPopup(createJourneyPopup(point))
-                .openPopup();
+const osmCache = {};
+
+async function loadBoundary(osmId, name, retry = 0) {
+    // usa cache se disponibile
+    if (osmCache[osmId]) return osmCache[osmId];
+
+    try {
+        const query = `[out:json][timeout:25];relation(${osmId});out geom;`;
+        const res = await fetch(
+            'https://overpass-api.de/api/interpreter',
+            { method: 'POST', body: 'data=' + encodeURIComponent(query) }
+        );
+
+        if (res.status === 429 && retry < 3) {
+            await new Promise(r => setTimeout(r, 3000));
+            return loadBoundary(osmId, name, retry + 1);
+        }
+
+        if (!res.ok) throw new Error(res.status);
+
+        const json = await res.json();
+        const el = json.elements?.[0];
+        if (!el) return null;
+
+        const coords = extractPolygons(el);
+        if (!coords.length) return null;
+
+        const geojson = {
+            type: 'Feature',
+            geometry: {
+                type: coords.length > 1 ? 'MultiPolygon' : 'Polygon',
+                coordinates: coords.length > 1 ? coords : coords[0]
+            },
+            properties: { name }
         };
-        
-        container.appendChild(item);
+
+        osmCache[osmId] = geojson;
+        return geojson;
+    } catch (e) {
+        console.warn(`OSM fallito per ${name}`);
+        return null;
+    }
+}
+
+function extractPolygons(el) {
+    const polys = [];
+    if (el.members) {
+        el.members
+            .filter(m => m.type === 'way' && m.geometry)
+            .forEach(w => {
+                const c = w.geometry.map(p => [p.lon, p.lat]);
+                if (c.length > 2) polys.push([c]);
+            });
+    }
+    return polys;
+}
+
+// =========================
+// CREAZIONE POLIGONI
+// =========================
+
+function createPolygon(countryKey, country, geojson) {
+    if (geojson) {
+        const layer = L.geoJSON(geojson, { style: baseStyle(country.color) }).addTo(window.map);
+        return { layer, bounds: layer.getBounds(), approx: false };
+    }
+
+    const [sw, ne] = country.approximateBounds;
+    const rect = L.rectangle([sw, ne], baseStyle(country.color)).addTo(window.map);
+    return { layer: rect, bounds: rect.getBounds(), approx: true };
+}
+
+function baseStyle(color) {
+    return { color, fillColor: color, fillOpacity: 0.12, weight: 2.5, opacity: 0.7 };
+}
+
+// =========================
+// EVENTI SU POLIGONI
+// =========================
+
+function bindEvents(countryKey, country, data) {
+    const layer = data.layer;
+
+    layer.on('mouseover', e => {
+        e.target.setStyle({ fillOpacity: 0.3, weight: 4 });
+        highlightLabel(countryKey, true);
     });
-}
 
-function createTimelinePopup() {
-    // Pulisci vecchi elementi
-    document.querySelectorAll('.timeline-popup, .timeline-control').forEach(el => el.remove());
-    
-    // 1. BUTTON arancione basso
-    const btn = document.createElement('div');
-    btn.className = 'timeline-control';
-    btn.innerHTML = '🚌 Tappe Viaggio';
-    document.body.appendChild(btn);
-    
-    // 2. POPUP container
-    const popup = document.createElement('div');
-    popup.className = 'timeline-popup';
-    popup.id = 'timelinePopup';
-    
-    // 3. HEADER + contenuto tappe ORIGINALI
-    popup.innerHTML = `
-        <div style="background: linear-gradient(135deg, #e67e22, #d35400); color: white; padding: 15px; position: sticky; top: 0;">
-            <div style="display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: bold;">
-                🚌 Tappe del Viaggio
-                <span id="closePopup" style="margin-left: auto; font-size: 24px; cursor: pointer;">×</span>
-            </div>
-        </div>
-        <div id="realTimelineContent" style="padding: 20px; max-height: 300px; overflow-y: auto;">
-            <!-- ← QUI VANNO LE TUE TAPPE ORIGINALI -->
-            Caricamento tappe...
-        </div>
-    `;
-    document.body.appendChild(popup);
-    
-    // 4. DOPO 500ms → popola con tappe REALI
-    setTimeout(() => {
-        const content = document.getElementById('realTimelineContent');
-        // Copia contenuto dalla tua timeline originale
-        const originalTimeline = document.querySelector('.timeline, .leaflet-timeline-control, [class*="timeline"]');
-        
-        if (originalTimeline && originalTimeline.innerHTML) {
-            content.innerHTML = originalTimeline.innerHTML; // ← TAPPE REALI!
-            console.log('✅ Tappe originali copiate nel popup');
-        } else {
-            content.innerHTML = `
-                <div style="text-align: center; padding: 40px; color: #666;">
-                    <div style="font-size: 24px; margin-bottom: 10px;">🚌</div>
-                    Nessuna tappa caricata
-                </div>
-            `;
+    layer.on('mouseout', e => {
+        if (state.activeCountry !== countryKey) {
+            e.target.setStyle(baseStyle(country.color));
+            highlightLabel(countryKey, false);
         }
-    }, 500);
-    
-    // 5. CLICK events
-    btn.onclick = (e) => { e.stopPropagation(); popup.classList.toggle('active'); };
-    
-    document.getElementById('closePopup').onclick = () => popup.classList.remove('active');
-    
-    document.onclick = (e) => {
-        if (!popup.contains(e.target) && !btn.contains(e.target)) {
-            popup.classList.remove('active');
-        }
-    };
+    });
+
+    layer.on('click', () => Countries.enter(countryKey));
+    layer.bindTooltip(country.name, { opacity: 0.95 });
 }
 
-
-function playFullVideo(videoUrl) {
-    const modal = document.getElementById('video-modal');
-    const video = document.getElementById('full-video');
-    
-    if (modal && video) {
-        video.src = videoUrl;
-        modal.classList.add('active');
-        video.play();
-    }
-}
-
-function closeFullVideo() {
-    const modal = document.getElementById('video-modal');
-    const video = document.getElementById('full-video');
-    
-    if (modal && video) {
-        video.pause();
-        modal.classList.remove('active');
-        video.src = '';
-    }
-}
-
-function addLayerControls() {
-    if (typeof window.map === 'undefined' || window.layerControlAdded) return;
-    
-    // Mappe base
-    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
-    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}');
-    const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png');
-
-    const baseLayers = {
-        "🗺️ Standard": osmLayer,
-        "🛰️ Satellite": satelliteLayer, 
-        "🌍 Terreno": topoLayer
-    };
-
-    const overlays = {};
-    if (window.placesLayer) overlays["📍 Luoghi"] = window.placesLayer;
-    if (window.citiesLayer) overlays["🏙️ Città"] = window.citiesLayer;
-    
-    // UN SOLO layer control
-    window.layerControl = L.control.layers(baseLayers, overlays, {
-        position: 'topright',
-        collapsed: true
-    }).addTo(window.map);
-    
-    window.layerControlAdded = true; // Flag anti-dupe
-}
-
-
 // =========================
-// RENDI GLOBALI
+// LABEL PAESI
 // =========================
 
-window.drawJourneyPath = drawJourneyPath;
-window.animateJourney = animateJourney;
-window.populateTimeline = populateTimeline;
-window.playFullVideo = playFullVideo;
-window.closeFullVideo = closeFullVideo;
-window.addLayerControls = addLayerControls;
-
-// Chiudi video con ESC
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        closeFullVideo();
-    }
-});
-
-console.log('✅ Routes.js caricato - funzioni esportate');
-
-// =========================
-// RESET ANIMAZIONE
-// =========================
-
-function resetAnimation() {
-    stopAnimation();
-    
-    // Torna alla vista iniziale
-    if (window.map) {
-        window.map.setView([43.8564, 18.4131], 7);
-    }
-    
-    // Resetta timeline
-    document.querySelectorAll('.timeline-item').forEach(el => 
-        el.classList.remove('active')
+function addCountryLabel(countryKey, country) {
+    const marker = L.marker(country.center, { interactive: false, opacity: 0.85 }).addTo(window.map);
+    marker.bindTooltip(
+        `<div class="country-label">${country.name}</div>`,
+        { permanent: true, direction: 'center', className: 'country-label-soft' }
     );
-    
-    console.log('🔄 Animazione resettata');
+    state.labels[countryKey] = marker;
 }
 
-// Esporta
-window.resetAnimation = resetAnimation;
-
-// Variabile velocità (default 6000ms)
-let animationSpeed = 6000;
-
-function updateSpeed(value) {
-    const speeds = {
-        '1': { time: 10000, label: 'Lenta' },
-        '2': { time: 6000, label: 'Normale' },
-        '3': { time: 3000, label: 'Veloce' }
-    };
-    
-    animationSpeed = speeds[value].time;
-    document.getElementById('speed-value').textContent = speeds[value].label;
-    
-    console.log(`⚡ Velocità cambiata: ${speeds[value].label} (${animationSpeed}ms)`);
-}
-
-// Esporta
-window.updateSpeed = updateSpeed;
-
-// Usa animationSpeed invece di 6000 hardcoded
-function moveToNext() {
-    // ... codice esistente ...
-    
-    currentStep++;
-    animationInterval = setTimeout(moveToNext, animationSpeed); // <-- USA QUESTA
+function highlightLabel(countryKey, on) {
+    const m = state.labels[countryKey];
+    if (!m) return;
+    const el = m.getElement()?.querySelector('.country-label-soft');
+    if (!el) return;
+    el.style.transform = on ? 'scale(1.15)' : 'scale(1)';
 }
 
 // =========================
-// TIMELINE HOVER ESPANDI
+// CITTÀ
 // =========================
-function initTimelineHover() {
-    const timeline = document.querySelector('.timeline');
-    if (!timeline) return;
-    
-    let hoverTimeout;
-    
-    timeline.addEventListener('mouseenter', () => {
-        clearTimeout(hoverTimeout);
-        timeline.style.height = '300px';
+
+function showCities(countryKey) {
+    hideCities();
+
+    const countryCities = getCitiesByCountry(countryKey);
+    if (!countryCities?.length) return;
+
+    state.cityMarkers[countryKey] = [];
+
+    countryCities.forEach(city => {
+        const marker = L.marker([city.lat, city.lng], { title: city.name }).addTo(map);
+
+        marker.bindTooltip(
+            `<div class="city-label">${city.icon} ${city.name}</div>`,
+            { permanent: true, direction: 'top', className: 'city-label-soft' }
+        );
+
+        marker.on('click', () => goToCityPage(city.country, city.id));
+
+        state.cityMarkers[countryKey].push(marker);
     });
-    
-    timeline.addEventListener('mouseleave', () => {
-        hoverTimeout = setTimeout(() => {
-            timeline.style.height = '50px';
-        }, 1000); // Chiudi dopo 1s se esci
+}
+
+function hideCities() {
+    Object.values(state.cityMarkers).forEach(markers => {
+        markers.forEach(m => m.remove());
     });
-    
-    // Chiudi se click fuori
-    document.addEventListener('click', (e) => {
-        if (!timeline.contains(e.target)) {
-            timeline.style.height = '50px';
+    state.cityMarkers = {};
+}
+
+// =========================
+// NAVIGAZIONE PAESI
+// =========================
+
+window.Countries = {
+    enter(countryKey) {
+        const data = state.polygons[countryKey];
+
+        if (!data || !data.bounds || !data.bounds.isValid()) {
+            console.warn('Bounds non validi per', countryKey, data);
+            return;
         }
-    });
+
+        state.activeCountry = countryKey;
+        map.fitBounds(data.bounds, { padding: [40, 40] });
+        showBackButton();
+        showCities(countryKey);
+    },
+
+    back() {
+        hideCities();
+        state.activeCountry = null;
+        hideBackButton();
+    }
+};
+
+// =========================
+// BACK BUTTON
+// =========================
+
+function showBackButton() {
+    if (document.getElementById('back-btn')) return;
+
+    const b = document.createElement('button');
+    b.id = 'back-btn';
+    b.textContent = '← Torna alla mappa';
+    b.style.cssText = `
+        position:fixed; top:20px; left:20px; z-index:5000;
+        padding:10px 18px; border-radius:22px; border:none;
+        background:white; font-weight:600;
+        box-shadow:0 4px 14px rgba(0,0,0,.2);
+        cursor:pointer;
+    `;
+    b.onclick = backToOverview;
+    document.body.appendChild(b);
 }
 
-window.addEventListener('mapReady', () => {
-    if (window.routesInited) return;
-    window.routesInited = true;
-    
-    setTimeout(() => {
-        drawJourneyPath();
-        populateTimeline();        // ← LA TUA ORIGINALE!
-        addLayerControls();
-        createTimelinePopup();     // ← Popup con tappe reali
-    }, 800); // +300ms per far caricare tappe
-});
+function hideBackButton() {
+    const b = document.getElementById('back-btn');
+    if (b) b.remove();
+}
+
+function backToOverview() {
+    Countries.back();
+    map.setView([43, 25], 5); // vista overview iniziale
+}
+
+// =========================
+// INIT
+// =========================
+
+async function initCountries() {
+    if (!window.map || state.loading || state.initialized) {
+        setTimeout(initCountries, 500);
+        return;
+    }
+
+    state.loading = true;
+    state.initialized = true;
+    showLoading();
+
+    for (const key of Object.keys(countries)) {
+        const c = countries[key];
+        const geo = await loadBoundary(c.osmRelationId, c.name);
+        const data = createPolygon(key, c, geo);
+        bindEvents(key, c, data);
+        addCountryLabel(key, c);
+        state.polygons[key] = data;
+        await new Promise(r => setTimeout(r, 250));
+    }
+
+    hideLoading();
+    state.loading = false;
+    console.log('✅ Countries inizializzati');
+}
+
+// =========================
+// EXPORT GLOBALI
+// =========================
+
+window.countries = countries;
+window.initCountries = initCountries;
+
+})();

@@ -32,19 +32,18 @@ document.addEventListener('DOMContentLoaded', async function() {
         return;
     }
     
-    // 1. Carica map.js per primo
-    await import('./map.js');
-    console.log('✅ Map.js caricato');
-    
     // 2. Poi layers.js
     await import('./layers.js');
     console.log('✅ Layers.js caricato');
+
+    // 4. Places.js → USA le funzioni di layers.js per aggiungere luoghi
+    await import('./places.js');
     
-    // 3. Poi routes.js
+    // 5. Poi routes.js
     await import('./routes.js');
     console.log('✅ Routes.js caricato');
     
-    // 4. Infine narrative.js
+    // 6. Infine narrative.js
     await import('./narrative.js');
     console.log('✅ Narrative.js caricato');
     

@@ -1,7 +1,8 @@
 // =========================
-// ICONS PERSONALIZZATE
+// LAYERS.JS - Modificato per Sistema Gerarchico
 // =========================
 
+// ICONS PERSONALIZZATE
 const tentIcon = L.divIcon({
     html: `
         <svg width="100%" height="100%" viewBox="0 0 36 28" xmlns="http://www.w3.org/2000/svg">
@@ -41,8 +42,21 @@ const spotIcon = L.divIcon({
     popupAnchor: [0, -28]
 });
 
+const cityIcon = L.divIcon({
+    html: `
+        <svg width="100%" height="100%" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="16" cy="16" r="14" fill="#667eea" stroke="white" stroke-width="3"/>
+            <text x="16" y="21" text-anchor="middle" fill="white" font-size="16" font-weight="bold">🏛</text>
+        </svg>
+    `,
+    className: 'custom-marker city-marker',
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32]
+});
+
 // =========================
-// FUNZIONI (DEFINISCI PRIMA DI USARE)
+// FUNZIONE: Get Icon By Type
 // =========================
 
 function getIconByType(type) {
@@ -53,24 +67,37 @@ function getIconByType(type) {
         case 'natura':
             return stallIcon;
         case 'città':
+            return cityIcon;
         default:
             return spotIcon;
     }
 }
 
+// =========================
+// CREA POPUP CONTENT (AGGIORNATO)
+// =========================
 
 function createPopupContent(place) {
+    // Se è una città con sistema gerarchico, usa il popup speciale
+    if (place.country && window.createCityPopupWithLink) {
+        return window.createCityPopupWithLink(place);
+    }
+
+    // Altrimenti usa il popup normale
+    const lang = window.currentLang || 'it';
+    
     let content = `
-        <div style="min-width: 280px; max-width: 400px; font-family: Arial;">
+        <div style="min-width: 280px; max-width: 400px; font-family: 'Segoe UI', sans-serif;">
             <h3 style="margin: 0 0 10px 0; color: #667eea; font-size: 1.2rem;">
                 ${place.name}
             </h3>
     `;
     
     if (place.description) {
+        const desc = lang === 'it' ? place.description : (place.description_en || place.description);
         content += `
             <p style="margin: 8px 0; color: #666; line-height: 1.5;">
-                ${place.description}
+                ${desc}
             </p>
         `;
     }
@@ -94,12 +121,13 @@ function createPopupContent(place) {
     }
     
     if (place.story) {
+        const storyText = lang === 'it' ? place.story : (place.story_en || place.story);
         content += `
             <div style="margin-top: 10px; padding: 12px; 
                         background: #f5f5f5; border-left: 4px solid #667eea; 
                         border-radius: 4px;">
                 <p style="margin: 0; font-style: italic; color: #444; line-height: 1.6;">
-                    ${place.story}
+                    ${storyText}
                 </p>
             </div>
         `;
@@ -111,7 +139,7 @@ function createPopupContent(place) {
                style="display: inline-block; margin-top: 10px; 
                       padding: 8px 16px; background: #667eea; color: white; 
                       text-decoration: none; border-radius: 6px; font-size: 0.9rem;">
-                📖 Leggi di più
+                📖 ${lang === 'it' ? 'Leggi di più' : 'Read more'}
             </a>
         `;
     }
@@ -119,6 +147,10 @@ function createPopupContent(place) {
     content += `</div>`;
     return content;
 }
+
+// =========================
+// ADD ILLUSTRATION MARKER (AGGIORNATO)
+// =========================
 
 function addIllustrationMarker(lat, lng, place) {
     if (typeof window.placesLayer === 'undefined') {
@@ -131,7 +163,7 @@ function addIllustrationMarker(lat, lng, place) {
     const marker = L.marker([lat, lng], { icon })
         .addTo(window.placesLayer)
         .bindPopup(createPopupContent(place), {
-            maxWidth: 400,
+            maxWidth: 450,
             className: 'custom-popup'
         });
 
@@ -141,6 +173,13 @@ function addIllustrationMarker(lat, lng, place) {
             window.map.setView([lat, lng], Math.max(window.map.getZoom(), 12));
         }
     });
+
+    // Se è una città con paese, aggiungi animazione speciale
+    if (place.country) {
+        marker.on('popupopen', () => {
+            console.log(`📍 Aperto dettaglio città: ${place.name}`);
+        });
+    }
 
     return marker;
 }
@@ -153,4 +192,4 @@ window.getIconByType = getIconByType;
 window.createPopupContent = createPopupContent;
 window.addIllustrationMarker = addIllustrationMarker;
 
-console.log('✅ Layers.js caricato - funzioni esportate');
+console.log('✅ Layers.js caricato (aggiornato per sistema gerarchico)');
