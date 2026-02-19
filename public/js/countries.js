@@ -92,20 +92,28 @@ function hideLoading() {
 const osmCache = {};
 
 async function loadBoundary(osmId, name, retry = 0) {
-    // usa cache se disponibile
     if (osmCache[osmId]) return osmCache[osmId];
 
-    try {
-        const query = `[out:json][timeout:25];relation(${osmId});out geom;`;
-        const res = await fetch(
-            'https://overpass-api.de/api/interpreter',
-            { method: 'POST', body: 'data=' + encodeURIComponent(query) }
-        );
+    // Server alternativi da provare in ordine
+    const servers = [
+        'https://overpass-api.de/api/interpreter',
+        'https://overpass.kumi.systems/api/interpreter',
+        'https://maps.mail.ru/osm/tools/overpass/api/interpreter'
+    ];
 
-        if (res.status === 429 && retry < 3) {
-            await new Promise(r => setTimeout(r, 3000));
-            return loadBoundary(osmId, name, retry + 1);
-        }
+    const server = servers[retry % servers.length];
+    const query = `[out:json][timeout:15];relation(${osmId});out geom;`;
+
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s max
+
+        const res = await fetch(server, {
+            method: 'POST',
+            body: 'data=' + encodeURIComponent(query),
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
 
         if (!res.ok) throw new Error(res.status);
 
@@ -127,9 +135,15 @@ async function loadBoundary(osmId, name, retry = 0) {
 
         osmCache[osmId] = geojson;
         return geojson;
+
     } catch (e) {
+        if (retry < 2) {
+            console.warn(`⚠️ ${server} fallito, provo server alternativo...`);
+            await new Promise(r => setTimeout(r, 1000));
+            return loadBoundary(osmId, name, retry + 1);
+        }
         console.warn(`OSM fallito per ${name}`);
-        return null;
+        return null; // usa rettangolo approssimativo
     }
 }
 

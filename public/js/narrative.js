@@ -3,21 +3,29 @@ var currentLang = 'it';
 
 function loadPlaces() {
     fetch('/api/places')
-    .then(r => r.json())
+    .then(response => {
+        // Controlla se la risposta è OK e se è di tipo JSON
+        const contentType = response.headers.get("content-type");
+        if (!response.ok || !contentType || !contentType.includes("application/json")) {
+            throw new TypeError("L'API non ha restituito JSON valido (Errore 500 o Rotta mancante)");
+        }
+        return response.json();
+    })
     .then(places => {
-        allPlaces = places || [];
-        filterPlaces();
+        window.allPlaces = (places && places.length > 0) ? places : (window.cities || []);
+        console.log('✅ Places caricati da API:', window.allPlaces.length);
+        if (typeof filterPlaces === 'function') filterPlaces();
     })
     .catch(err => {
-        console.error('Errore caricamento places:', err);
-        // fallback: usa cities già definiti
+        console.warn('⚠️ Fallback attivato:', err.message);
+        
+        // Forza l'uso dei dati locali definiti in places.js
         if (window.cities) {
-            console.log('✅ Uso cities.js come fallback');
-            allPlaces = [...window.cities];
-            filterPlaces();
+            window.allPlaces = [...window.cities];
+            console.log('✅ Dati locali caricati con successo (4 città)');
+            if (typeof filterPlaces === 'function') filterPlaces();
         }
     });
-
 }
 
 function filterPlaces() {

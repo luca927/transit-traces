@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <title>Transit Traces 🗺️ Sistema Gerarchico</title>
     
-    @vite(['resources/js/app.js', 'resources/css/app.css'])
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -242,26 +243,26 @@
             margin: 0;
             line-height: 1.5;
         }
+        /* Marker personalizzati stile Refugee Republic */
+        .city-marker-icon {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            box-shadow: 0 0 15px rgba(102, 126, 234, 0.5);
+            transition: all 0.3s;
+        }
+
+        .city-marker-icon:hover {
+            transform: scale(1.2);
+            background: #667eea;
+        }
     </style>
 </head>
 <body>
-
-<!-- SPLASH SCREEN -->
-<div id="splash" class="splash">
-    <div>
-        <h1 style="font-size: 4rem; margin: 0;">Transit Traces</h1>
-        <p style="font-size: 1.5rem; opacity: 0.8; margin-top: 10px;">
-            La Rotta Balcanica - Sistema Gerarchico
-        </p>
-        <button onclick="enterMap()" class="btn-main" 
-                style="background: white; color: var(--primary); 
-                       padding: 20px 50px; font-size: 1.2rem; 
-                       border-radius: 50px; margin-top: 30px; cursor: pointer;">
-            🗺️ ESPLORA LA MAPPA
-        </button>
-    </div>
-</div>
-
 <!-- HEADER -->
 <header>
     <div class="socials" style="color: #333; font-size: 1.2rem; display: flex; gap: 15px;">
@@ -312,24 +313,31 @@
 <!-- AUDIO AMBIENTALE -->
 <audio id="ambient-audio" loop></audio>
 
+<script src="{{ asset('js/layers.js') }}"></script>
+<script src="{{ asset('js/cities.js') }}"></script>
+<script src="{{ asset('js/countries.js') }}"></script>
+
 <!-- SCRIPTS - ORDINE IMPORTANTE -->
 <script>
 // =========================
 // INIZIALIZZAZIONE MAPPA
 // =========================
 
-console.log('🚀 Inizializzo Transit Traces...');
+window.addEventListener('load', () => {
+    console.log('🚀 Inizializzo Transit Traces...');
 
-// Variabili globali
-window.allPlaces = [];
-window.currentLang = 'it';
+    // Variabili globali
+    window.allPlaces = [];
+    window.currentLang = 'it';
 
-// Verifica che l'elemento mappa esista
-if (typeof document.getElementById('map') === 'undefined') {
-    console.error('❌ Elemento #map non trovato!');
-} else {
+    const mapEl = document.getElementById('map');
+    if (!mapEl) {
+        console.error('❌ Elemento #map non trovato!');
+        return;
+    }
+
     // Crea mappa
-    window.map = L.map('map', {
+    const map = L.map('map', {
         center: [43, 19],
         zoom: 6,
         zoomControl: true,
@@ -337,31 +345,25 @@ if (typeof document.getElementById('map') === 'undefined') {
         maxZoom: 18,
         tap: false
     });
+    window.map = map;
 
     // Tile layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors',
         maxZoom: 18
-    }).addTo(window.map);
+    }).addTo(map);
 
     // Zoom control
-    L.control.zoom({ position: 'bottomright' }).addTo(window.map);
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // IMPORTANTE: Crea i layer groups
-    window.placesLayer = L.layerGroup().addTo(window.map);
-    window.citiesLayer = L.layerGroup().addTo(window.map);
-
-    // Shorthand per compatibilità
-    var map = window.map;
-    var placesLayer = window.placesLayer;
-    var citiesLayer = window.citiesLayer;
+    // Layer group per i marker delle città
+    window.placesLayer = L.layerGroup().addTo(map);
 
     console.log('✅ Mappa inizializzata');
-    console.log('✅ placesLayer creato:', window.placesLayer);
 
     // Click sulla mappa per ottenere coordinate
     map.on('click', e => {
-        console.log("Coordinate: lat=" + e.latlng.lat.toFixed(4) + ", lng=" + e.latlng.lng.toFixed(4));
+        console.log(`Coordinate: lat=${e.latlng.lat.toFixed(4)}, lng=${e.latlng.lng.toFixed(4)}`);
         navigator.clipboard.writeText(`[${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}]`);
         console.log("✅ Coordinate copiate!");
     });
@@ -372,68 +374,47 @@ if (typeof document.getElementById('map') === 'undefined') {
         map.whenReady(() => {
             audio.volume = 0.3;
             audio.muted = true;
-            audio.addEventListener('canplaythrough', () => {
-                audio.play().catch(() => {});
-            }, { once: true });
+            audio.addEventListener('canplaythrough', () => { audio.play().catch(() => {}); }, { once: true });
         });
 
-        document.addEventListener('click', () => {
-            if (audio.muted) audio.muted = false;
-        }, { once: true });
+        document.addEventListener('click', () => { if (audio.muted) audio.muted = false; }, { once: true });
     }
 
-    // Video nei popup
-    map.on('popupopen', e => {
-        const video = e.popup._contentNode.querySelector('video');
-        if (video) {
-            video.muted = false;
-            video.play().catch(() => {});
-            setTimeout(() => video.classList.add('loaded'), 50);
-        }
-    });
-
-    map.on('popupclose', e => {
-        const video = e.popup._contentNode.querySelector('video');
-        if (video) {
-            video.pause();
-        }
-    });
-
-    // EMETTI EVENTO mapReady
-    setTimeout(() => {
-        const event = new Event('mapReady');
-        window.dispatchEvent(event);
-        console.log('📡 Evento mapReady emesso');
-    }, 500);
-}
-
-// =========================
-// FUNZIONI BASE
-// =========================
-
-function enterMap() {
-    // Nascondi splash screen
-    document.getElementById('splash').classList.add('hidden');
-    setTimeout(() => {
-        document.getElementById('splash').style.display = 'none';
-    }, 500);
-    
-    // ✅ IMPORTANTE: Segnala che la mappa è stata aperta
+    // Auto-init senza splash
     window.mapEntered = true;
-    
-    // ✅ Inizializza i paesi SOLO ORA (non prima!)
-    if (window.initCountries) {
-        console.log('🌍 Utente ha aperto la mappa, carico i paesi...');
-        setTimeout(() => {
-            window.initCountries();
-        }, 1000); // Attendi 1 secondo per far caricare tutto
-    } else {
-        console.error('❌ initCountries non trovata! Verifica che countries.js sia caricato.');
-    }
-}
+    setTimeout(() => {
+        if (window.initCountries) window.initCountries();
+    }, 1000);
 
-// Rendi globale
-window.enterMap = enterMap;
+    window.dispatchEvent(new Event('mapReady'));
+});
+
+// =========================
+// INTEGRAZIONE CITTÀ SU PLACES
+// =========================
+
+window.addEventListener('mapReady', () => {
+    console.log('🏙️ Integro città in allPlaces e creo marker...');
+    
+    // 1️⃣ Popola allPlaces
+    if (window.cities) {
+        cities.forEach(city => {
+            const exists = window.allPlaces.some(p => p.id === city.id);
+            if (!exists) window.allPlaces.push(city);
+        });
+    }
+
+    // 2️⃣ Aggiungi marker sulla mappa
+    window.allPlaces.forEach(city => {
+        const marker = L.marker([city.lat, city.lng], { title: city.name })
+            .bindPopup(window.createCityPopupWithLink(city))
+            .addTo(window.placesLayer);
+        
+        marker.on('click', () => window.goToCityPage(city.country, city.id));
+    });
+
+    console.log('✅ Marker delle città creati:', window.allPlaces.length);
+});
 
 function setLanguage(lang) {
     window.currentLang = lang;
@@ -508,15 +489,9 @@ document.getElementById('filter').addEventListener('change', filterPlaces);
 // RENDI GLOBALE
 window.filterPlaces = filterPlaces;
 window.setLanguage = setLanguage;
-</script>
 
-<!-- INCLUDI GLI SCRIPT DEL SISTEMA GERARCHICO -->
-<script src="{{ asset('js/layers-updated.js') }}"></script>
-<script src="{{ asset('js/cities.js') }}"></script>
-<script src="{{ asset('js/countries.js') }}"></script>
+// INIZIALIZZAZIONE FINALE
 
-<!-- INIZIALIZZAZIONE FINALE -->
-<script>
 window.addEventListener('mapReady', () => {
     console.log('🎉 Sistema gerarchico pronto!');
     

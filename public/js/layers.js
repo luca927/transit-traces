@@ -152,36 +152,16 @@ function createPopupContent(place) {
 // ADD ILLUSTRATION MARKER (AGGIORNATO)
 // =========================
 
-function addIllustrationMarker(lat, lng, place) {
-    if (typeof window.placesLayer === 'undefined') {
-        console.error('placesLayer non definito!');
-        return;
-    }
-
-    const icon = getIconByType(place.type || 'spot');
-
-    const marker = L.marker([lat, lng], { icon })
-        .addTo(window.placesLayer)
-        .bindPopup(createPopupContent(place), {
-            maxWidth: 450,
-            className: 'custom-popup'
-        });
-
-    marker.on('click', () => {
-        console.log(`Cliccato su: ${place.name}`);
-        if (window.map) {
-            window.map.setView([lat, lng], Math.max(window.map.getZoom(), 12));
-        }
+function addIllustrationMarker(lat, lng, city) {
+    const icon = L.divIcon({
+        className: 'city-marker-icon',
+        html: `<span>${city.icon}</span>`,
+        iconSize: [40, 40]
     });
 
-    // Se è una città con paese, aggiungi animazione speciale
-    if (place.country) {
-        marker.on('popupopen', () => {
-            console.log(`📍 Aperto dettaglio città: ${place.name}`);
-        });
-    }
-
-    return marker;
+    L.marker([lat, lng], { icon: icon })
+     .addTo(window.placesLayer)
+     .on('click', () => goToCityPage(city.country, city.id));
 }
 
 // =========================

@@ -278,19 +278,26 @@ function createCityPopupWithLink(city) {
 
 function goToCityPage(country, cityId) {
     const city = getCityById(cityId);
-    
-    if (!city) {
-        console.error('Città non trovata:', cityId);
-        return;
-    }
+    if (!city) return;
 
-    console.log(`🗺️ Navigazione a: ${city.name}, ${country}`);
-    
-    // In produzione, questo sarà un vero redirect
-    // window.location.href = `/city/${country}/${cityId}`;
-    
-    // Per ora, mostra un drawer con i dettagli completi
-    openCityDrawer(city);
+    // EFFETTO REFUGEE REPUBLIC: 
+    // La mappa vola sulla città prima di aprire i dettagli
+    window.map.flyTo([city.lat, city.lng], 14, {
+        animate: true,
+        duration: 2.5 // Volo lento e immersivo
+    });
+
+    // Aspetta che il volo sia finito per aprire il drawer
+    setTimeout(() => {
+        openCityDrawer(city);
+        // Cambia l'audio ambientale in base alla città
+        const ambientAudio = document.getElementById('ambient-audio');
+        if (city.audio) {
+            ambientAudio.src = city.audio;
+            ambientAudio.volume = 0.5;
+            ambientAudio.play();
+        }
+    }, 2000);
 }
 
 // =========================
@@ -393,6 +400,44 @@ function closeCityDrawer() {
     }
 }
 
+window.initCountries = function() {
+    const countryStyles = {
+        'bosnia': { color: '#e74c3c', fillOpacity: 0.2 },
+        'bulgaria': { color: '#f1c40f', fillOpacity: 0.2 },
+        'greece': { color: '#3498db', fillOpacity: 0.2 }
+    };
+
+    // Esempio semplificato: dovresti caricare un file GeoJSON qui
+    // Per ora creiamo dei cerchi grandi o rettangoli per testare il click
+    const regions = [
+        { id: 'bosnia', center: [44.1, 17.9], name: 'Bosnia ed Erzegovina' },
+        { id: 'bulgaria', center: [42.7, 25.2], name: 'Bulgaria' },
+        { id: 'greece', center: [39.0, 22.0], name: 'Grecia' }
+    ];
+
+    regions.forEach(region => {
+        const style = countryStyles[region.id];
+        // Crea un'area interattiva
+        const zone = L.circle(region.center, {
+            radius: 150000, // 150km
+            color: style.color,
+            fillColor: style.color,
+            fillOpacity: style.fillOpacity,
+            className: 'country-polygon-soft'
+        }).addTo(window.map);
+
+        zone.bindTooltip(region.name, { sticky: true, className: 'country-tooltip-soft' });
+
+        zone.on('click', () => {
+            window.map.flyTo(region.center, 7);
+            // Filtra i marker per mostrare solo quelli di questo paese
+            document.getElementById('search').value = region.id;
+            filterPlaces();
+        });
+    });
+    console.log("🌍 Paesi inizializzati");
+};
+
 // =========================
 // ESPORTA GLOBALI
 // =========================
@@ -416,4 +461,4 @@ window.addEventListener('mapReady', () => {
     mergeCitiesIntoPlaces();
 });
 
-console.log('✅ Cities.js caricato - 4 città definite');
+console.log('✅ Places.js caricato - 4 città definite');

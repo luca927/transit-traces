@@ -107,7 +107,7 @@
     <p id="hero-desc" style="max-width: 600px; margin-bottom: 3rem; font-size: 1.2rem; color: #ccc;">
         Tracce quotidiane nel campo profughi di Domiz, Iraq del Nord.
     </p>
-    <a href="#map" class="btn-orange" id="hero-cta">Esplora Domiz Camp</a>
+    <a href="#map" class="btn-orange" id="hero-cta">Esplora il Sito</a>
 </section>
 
 <section class="intro">
@@ -151,9 +151,28 @@
 
 <script>
     document.querySelector('a[href="#map"]').addEventListener('click', function(e) {
-        e.preventDefault();
-        document.getElementById('map').scrollIntoView({ behavior: 'smooth' });
-    });
+    e.preventDefault();
+    
+    const target = document.getElementById('map');
+    const targetPosition = target.getBoundingClientRect().top + window.pageYOffset;
+    const startPosition = window.pageYOffset;
+    const distance = targetPosition - startPosition;
+    const duration = 2500; // millisecondi — aumenta per rallentare ancora di più
+    let start = null;
+
+    function easeInOutQuad(t) {
+        return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    }
+
+    function step(timestamp) {
+        if (!start) start = timestamp;
+        const progress = Math.min((timestamp - start) / duration, 1);
+        window.scrollTo(0, startPosition + distance * easeInOutQuad(progress));
+        if (progress < 1) requestAnimationFrame(step);
+    }
+
+    requestAnimationFrame(step);
+});
 
     function setLanguage(lang) {
         const itBtn = document.getElementById('btn-it');
@@ -164,7 +183,7 @@
             enBtn.style.background = 'transparent'; enBtn.style.border = '1px solid white';
             
             document.getElementById('hero-desc').innerHTML = 'Tracce quotidiane nel campo profughi di Domiz, Iraq del Nord.';
-            document.getElementById('hero-cta').textContent = 'Esplora Domiz Camp';
+            document.getElementById('hero-cta').textContent = 'Esplora il Sito';
             document.getElementById('intro-title').textContent = 'Benvenuti';
             document.getElementById('intro-text').textContent = 'Un documentario interattivo sulla vita quotidiana nel campo profughi siriano di Domiz. Con circa 64.000 rifugiati, Domiz è diventata una mini-società.';
             document.getElementById('map-title').textContent = 'Entra nella Mappa';
@@ -183,7 +202,7 @@
             itBtn.style.background = 'transparent'; itBtn.style.border = '1px solid white';
 
             document.getElementById('hero-desc').innerHTML = 'Daily traces in Domiz refugee camp, Northern Iraq.';
-            document.getElementById('hero-cta').textContent = 'Explore Domiz Camp';
+            document.getElementById('hero-cta').textContent = 'Explore the Site';
             document.getElementById('intro-title').textContent = 'Welcome';
             document.getElementById('intro-text').textContent = 'An interactive documentary about daily life in the Syrian refugee camp of Domiz. With about 64,000 refugees, Domiz has become a mini-society.';
             document.getElementById('map-title').textContent = 'Enter the Map';
