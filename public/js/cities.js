@@ -280,17 +280,16 @@ function goToCityPage(country, cityId) {
     const city = getCityById(cityId);
     if (!city) return;
 
-    // EFFETTO REFUGEE REPUBLIC: 
-    // La mappa vola sulla città prima di aprire i dettagli
-    window.map.flyTo([city.lat, city.lng], 14, {
+    // USA geoToPixel invece delle coordinate geografiche
+    const coords = window.geoToPixel(city.lat, city.lng);
+
+    window.map.flyTo(coords, 2, {
         animate: true,
-        duration: 2.5 // Volo lento e immersivo
+        duration: 2.5
     });
 
-    // Aspetta che il volo sia finito per aprire il drawer
     setTimeout(() => {
         openCityDrawer(city);
-        // Cambia l'audio ambientale in base alla città
         const ambientAudio = document.getElementById('ambient-audio');
         if (city.audio) {
             ambientAudio.src = city.audio;
@@ -399,13 +398,6 @@ function closeCityDrawer() {
         drawer.style.right = '-100%';
     }
 }
-
-window.initCountries = function() {
-    const countryStyles = {
-        'bosnia': { color: '#e74c3c', fillOpacity: 0.2 },
-        'bulgaria': { color: '#f1c40f', fillOpacity: 0.2 },
-        'greece': { color: '#3498db', fillOpacity: 0.2 }
-    };
 
     // Esempio semplificato: dovresti caricare un file GeoJSON qui
     // Per ora creiamo dei cerchi grandi o rettangoli per testare il click

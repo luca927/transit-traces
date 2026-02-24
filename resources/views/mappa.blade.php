@@ -77,10 +77,7 @@
             z-index: 4000; font-weight: 600; color: #333;
         }
 
-        /* MAPPA STILE VINTAGE */
-        .leaflet-tile-pane {
-            filter: sepia(20%) contrast(1.1) brightness(0.9) grayscale(30%);
-        }
+        
         .leaflet-container { background: #1a1a1a !important; }
 
         /* COUNTRY POLYGON STYLING */
@@ -311,7 +308,7 @@
 <div id="map"></div>
 
 <!-- AUDIO AMBIENTALE -->
-<audio id="ambient-audio" loop></audio>
+<audio id="ambient-audio" src="{{ asset('audio/ambient.mp3') }}" loop></audio>
 
 <script src="{{ asset('js/layers.js') }}"></script>
 <script src="{{ asset('js/cities.js') }}"></script>
@@ -319,198 +316,210 @@
 
 <!-- SCRIPTS - ORDINE IMPORTANTE -->
 <script>
-// =========================
-// INIZIALIZZAZIONE MAPPA
-// =========================
 
-window.addEventListener('load', () => {
-    console.log('🚀 Inizializzo Transit Traces...');
+        // Mappa le coordinate geografiche reali → pixel dell'SVG
+        // Calibra questi valori guardando l'immagine!
+    function geoToPixel(lat, lng) {
+            // Estremi geografici della tua mappa SVG (da calibrare)
+        const latMin = 34.0,  latMax = 50.0;   // es: dal sud della Grecia al nord della Bosnia
+        const lngMin = 13.0,  lngMax = 30.0;
 
-    // Variabili globali
-    window.allPlaces = [];
-    window.currentLang = 'it';
+        const svgW = 1754, svgH = 1240;
 
-    const mapEl = document.getElementById('map');
-    if (!mapEl) {
-        console.error('❌ Elemento #map non trovato!');
-        return;
-    }
+        const x = ((lng - lngMin) / (lngMax - lngMin)) * svgW;
+        const y = svgH - ((lat - latMin) / (latMax - latMin)) * svgH; // Y invertito!
 
-    // Crea mappa
-    const map = L.map('map', {
-        center: [43, 19],
-        zoom: 6,
-        zoomControl: true,
-        minZoom: 5,
-        maxZoom: 18,
-        tap: false
-    });
-    window.map = map;
-
-    // Tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 18
-    }).addTo(map);
-
-    // Zoom control
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-    // Layer group per i marker delle città
-    window.placesLayer = L.layerGroup().addTo(map);
-
-    console.log('✅ Mappa inizializzata');
-
-    // Click sulla mappa per ottenere coordinate
-    map.on('click', e => {
-        console.log(`Coordinate: lat=${e.latlng.lat.toFixed(4)}, lng=${e.latlng.lng.toFixed(4)}`);
-        navigator.clipboard.writeText(`[${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}]`);
-        console.log("✅ Coordinate copiate!");
-    });
-
-    // Audio ambientale
-    const audio = document.getElementById('ambient-audio');
-    if (audio) {
-        map.whenReady(() => {
-            audio.volume = 0.3;
-            audio.muted = true;
-            audio.addEventListener('canplaythrough', () => { audio.play().catch(() => {}); }, { once: true });
-        });
-
-        document.addEventListener('click', () => { if (audio.muted) audio.muted = false; }, { once: true });
-    }
-
-    // Auto-init senza splash
-    window.mapEntered = true;
-    setTimeout(() => {
-        if (window.initCountries) window.initCountries();
-    }, 1000);
-
-    window.dispatchEvent(new Event('mapReady'));
-});
-
-// =========================
-// INTEGRAZIONE CITTÀ SU PLACES
-// =========================
-
-window.addEventListener('mapReady', () => {
-    console.log('🏙️ Integro città in allPlaces e creo marker...');
-    
-    // 1️⃣ Popola allPlaces
-    if (window.cities) {
-        cities.forEach(city => {
-            const exists = window.allPlaces.some(p => p.id === city.id);
-            if (!exists) window.allPlaces.push(city);
-        });
-    }
-
-    // 2️⃣ Aggiungi marker sulla mappa
-    window.allPlaces.forEach(city => {
-        const marker = L.marker([city.lat, city.lng], { title: city.name })
-            .bindPopup(window.createCityPopupWithLink(city))
-            .addTo(window.placesLayer);
-        
-        marker.on('click', () => window.goToCityPage(city.country, city.id));
-    });
-
-    console.log('✅ Marker delle città creati:', window.allPlaces.length);
-});
-
-function setLanguage(lang) {
-    window.currentLang = lang;
-
-    const itBtn = document.getElementById('it-btn');
-    const enBtn = document.getElementById('en-btn');
-
-    if (lang === 'it') {
-        itBtn.classList.add('active');
-        enBtn.classList.remove('active');
-        document.getElementById('controls-title').textContent = '🗺️ Esplora Stati e Città';
-        document.getElementById('search').placeholder = 'Cerca città o luoghi...';
-    } else {
-        enBtn.classList.add('active');
-        itBtn.classList.remove('active');
-        document.getElementById('controls-title').textContent = '🗺️ Explore States and Cities';
-        document.getElementById('search').placeholder = 'Search cities or places...';
-    }
-
-    if (window.filterPlaces) {
-        window.filterPlaces();
-    }
-}
-
-// =========================
-// FILTER PLACES
-// =========================
-
-function filterPlaces() {
-    if (!window.placesLayer) {
-        console.error('❌ placesLayer non definito');
-        return;
-    }
-
-    window.placesLayer.clearLayers();
-
-    const search = document.getElementById('search').value.toLowerCase();
-    const filter = document.getElementById('filter').value;
-
-    const filtered = window.allPlaces.filter(place => {
-        const matchesSearch = !search ||
-            place.name.toLowerCase().includes(search) ||
-            (place.description && place.description.toLowerCase().includes(search));
-
-        const matchesFilter = !filter || place.type === filter;
-
-        return matchesSearch && matchesFilter;
-    });
-
-    filtered.forEach(place => {
-        if (window.addIllustrationMarker) {
-            window.addIllustrationMarker(place.lat, place.lng, place);
+        return [y, x]; // Leaflet vuole [y, x] con CRS.Simple
         }
+
+    window.geoToPixel = geoToPixel;
+    // =========================
+    // INIZIALIZZAZIONE MAPPA
+    // =========================
+
+    window.addEventListener('load', () => {
+        console.log('🚀 Inizializzo Transit Traces...');
+
+        // Variabili globali
+        window.allPlaces = [];
+        window.currentLang = 'it';
+
+        const mapEl = document.getElementById('map');
+        if (!mapEl) {
+            console.error('❌ Elemento #map non trovato!');
+            return;
+        }
+
+        // DOPO
+        const svgWidth = 1754;
+        const svgHeight = 1240;
+
+        const map = L.map('map', {
+            crs: L.CRS.Simple,       // coordinate piatte, niente sfericità
+            zoomControl: false,
+            minZoom: -2,
+            maxZoom: 4,
+            tap: false
+        });
+        window.map = map;
+
+        // Bounds dell'SVG in coordinate "pixel"
+        const bounds = [[0, 0], [svgHeight, svgWidth]];
+
+        // Carica l'SVG come layer immagine di sfondo
+        L.imageOverlay("{{ asset('images/MAP.svg') }}", bounds).addTo(map);
+
+        // Fit della mappa ai bounds dell'immagine
+        map.fitBounds(bounds);
+
+        // Zoom control
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+        // Layer group per i marker delle città
+        window.placesLayer = L.layerGroup().addTo(map);
+
+        console.log('✅ Mappa inizializzata');
+
+        map.on('click', e => {
+        const px = `[${e.latlng.lat.toFixed(1)}, ${e.latlng.lng.toFixed(1)}]`;
+        console.log(`📍 Pixel SVG: y=${e.latlng.lat.toFixed(1)}, x=${e.latlng.lng.toFixed(1)}`);
+        navigator.clipboard.writeText(px);
+        console.log("✅ Coordinate pixel copiate!");
+    });
+});
+
+        // Audio ambientale
+        const audio = document.getElementById('ambient-audio');
+            document.addEventListener('click', () => {
+                audio.volume = 0.3;
+                audio.play().catch(e => console.warn('Audio bloccato:', e));
+            }, { once: true });
+
+        // Auto-init senza splash
+        window.mapEntered = true;
+
+    // =========================
+    // INTEGRAZIONE CITTÀ SU PLACES
+    // =========================
+
+    window.addEventListener('mapReady', () => {
+        console.log('🏙️ Integro città in allPlaces e creo marker...');
+        
+        // 1️⃣ Popola allPlaces
+        if (window.cities) {
+            cities.forEach(city => {
+                const exists = window.allPlaces.some(p => p.id === city.id);
+                if (!exists) window.allPlaces.push(city);
+            });
+        }
+
+        // 2️⃣ Aggiungi marker sulla mappa
+        window.allPlaces.forEach(city => {
+            const marker = L.marker(geoToPixel(city.lat, city.lng), { title: city.name })
+                .bindPopup(window.createCityPopupWithLink(city))
+                .addTo(window.placesLayer);
+            
+            marker.on('click', () => window.goToCityPage(city.country, city.id));
+        });
+
+        console.log('✅ Marker delle città creati:', window.allPlaces.length);
     });
 
-    // Aggiorna statistiche
-    const statsEl = document.getElementById('stats');
-    if (statsEl) {
-        const text = window.currentLang === 'it' 
-            ? `📍 ${filtered.length}/${window.allPlaces.length} luoghi mostrati`
-            : `📍 ${filtered.length}/${window.allPlaces.length} places shown`;
-        statsEl.textContent = text;
+    function setLanguage(lang) {
+        window.currentLang = lang;
+
+        const itBtn = document.getElementById('it-btn');
+        const enBtn = document.getElementById('en-btn');
+
+        if (lang === 'it') {
+            itBtn.classList.add('active');
+            enBtn.classList.remove('active');
+            document.getElementById('controls-title').textContent = '🗺️ Esplora Stati e Città';
+            document.getElementById('search').placeholder = 'Cerca città o luoghi...';
+        } else {
+            enBtn.classList.add('active');
+            itBtn.classList.remove('active');
+            document.getElementById('controls-title').textContent = '🗺️ Explore States and Cities';
+            document.getElementById('search').placeholder = 'Search cities or places...';
+        }
+
+        if (window.filterPlaces) {
+            window.filterPlaces();
+        }
     }
 
-    console.log(`✅ Filtrati ${filtered.length} luoghi`);
-}
+    // =========================
+    // FILTER PLACES
+    // =========================
 
-// Event listeners
-document.getElementById('search').addEventListener('keyup', filterPlaces);
-document.getElementById('filter').addEventListener('change', filterPlaces);
+    function filterPlaces() {
+        if (!window.placesLayer) {
+            console.error('❌ placesLayer non definito');
+            return;
+        }
 
-// RENDI GLOBALE
-window.filterPlaces = filterPlaces;
-window.setLanguage = setLanguage;
+        window.placesLayer.clearLayers();
 
-// INIZIALIZZAZIONE FINALE
+        const search = document.getElementById('search').value.toLowerCase();
+        const filter = document.getElementById('filter').value;
 
-window.addEventListener('mapReady', () => {
-    console.log('🎉 Sistema gerarchico pronto!');
-    
-    // Aspetta che cities.js abbia popolato allPlaces
-    setTimeout(() => {
-        filterPlaces();
-        
-        // Statistiche iniziali
+        const filtered = window.allPlaces.filter(place => {
+            const matchesSearch = !search ||
+                place.name.toLowerCase().includes(search) ||
+                (place.description && place.description.toLowerCase().includes(search));
+
+            const matchesFilter = !filter || place.type === filter;
+
+            return matchesSearch && matchesFilter;
+        });
+
+        filtered.forEach(place => {
+            if (window.addIllustrationMarker) {
+                window.addIllustrationMarker(place.lat, place.lng, place);
+            }
+        });
+
+        // Aggiorna statistiche
         const statsEl = document.getElementById('stats');
         if (statsEl) {
-            const text = window.currentLang === 'it'
-                ? `📍 ${window.allPlaces.length} luoghi disponibili | 3 stati`
-                : `📍 ${window.allPlaces.length} places available | 3 countries`;
+            const text = window.currentLang === 'it' 
+                ? `📍 ${filtered.length}/${window.allPlaces.length} luoghi mostrati`
+                : `📍 ${filtered.length}/${window.allPlaces.length} places shown`;
             statsEl.textContent = text;
         }
-    }, 1500);
-});
 
-console.log('✅ mappa.blade.php caricato completamente');
+        console.log(`✅ Filtrati ${filtered.length} luoghi`);
+    }
+
+    // Event listeners
+    document.getElementById('search').addEventListener('keyup', filterPlaces);
+    document.getElementById('filter').addEventListener('change', filterPlaces);
+
+    // RENDI GLOBALE
+    window.filterPlaces = filterPlaces;
+    window.setLanguage = setLanguage;
+
+    // INIZIALIZZAZIONE FINALE
+
+    window.addEventListener('mapReady', () => {
+        console.log('🎉 Sistema gerarchico pronto!');
+        
+        // Aspetta che cities.js abbia popolato allPlaces
+        setTimeout(() => {
+            filterPlaces();
+            
+            // Statistiche iniziali
+            const statsEl = document.getElementById('stats');
+            if (statsEl) {
+                const text = window.currentLang === 'it'
+                    ? `📍 ${window.allPlaces.length} luoghi disponibili | 3 stati`
+                    : `📍 ${window.allPlaces.length} places available | 3 countries`;
+                statsEl.textContent = text;
+            }
+        }, 1500);
+    });
+
+    console.log('✅ mappa.blade.php caricato completamente');
 </script>
 
 </body>

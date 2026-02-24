@@ -149,6 +149,118 @@
     </button>
 </section>
 
+<footer style="
+    background: #111;
+    color: #aaa;
+    padding: 70px 60px 0 60px;
+    font-family: 'Georgia', serif;
+">
+    <div style="
+        display: flex;
+        justify-content: space-between;
+        gap: 40px;
+        flex-wrap: wrap;
+        padding-bottom: 60px;
+    ">
+        <!-- Colonna 1: Brand -->
+        <div style="max-width: 280px;">
+            <h2 style="
+                font-size: 2rem;
+                font-weight: 400;
+                margin: 0 0 20px 0;
+                color: #fff;
+                letter-spacing: 0.02em;
+            ">
+                <span style="color: #c26a2a;">Transit</span> Traces
+            </h2>
+            <p style="
+                font-size: 0.95rem;
+                line-height: 1.7;
+                color: #888;
+                margin: 0;
+            ">
+                Un documentario interattivo che racconta i percorsi migratori attraverso illustrazioni e testimonianze.
+            </p>
+        </div>
+
+        <!-- Colonna 2: Esplora -->
+        <div>
+            <h3 style="
+                font-size: 0.8rem;
+                letter-spacing: 0.15em;
+                text-transform: uppercase;
+                color: #fff;
+                margin: 0 0 24px 0;
+                font-family: 'Arial', sans-serif;
+                font-weight: 700;
+            ">Esplora</h3>
+            <nav style="display: flex; flex-direction: column; gap: 14px;">
+                <a href="/storie" style="color: #888; text-decoration: none; font-size: 0.95rem; transition: color 0.2s;" onmouseover="this.style.color='#c26a2a'" onmouseout="this.style.color='#888'">Storie</a>
+                <a href="/la-vita" style="color: #888; text-decoration: none; font-size: 0.95rem;" onmouseover="this.style.color='#c26a2a'" onmouseout="this.style.color='#888'">La Vita</a>
+                <a href="/voci" style="color: #888; text-decoration: none; font-size: 0.95rem;" onmouseover="this.style.color='#c26a2a'" onmouseout="this.style.color='#888'">Voci</a>
+                <a href="/chi-siamo" style="color: #888; text-decoration: none; font-size: 0.95rem;" onmouseover="this.style.color='#c26a2a'" onmouseout="this.style.color='#888'">Chi Siamo</a>
+                <a href="/contatti" style="color: #888; text-decoration: none; font-size: 0.95rem;" onmouseover="this.style.color='#c26a2a'" onmouseout="this.style.color='#888'">Contatti</a>
+            </nav>
+        </div>
+
+        <!-- Colonna 3: Supporta -->
+        <div style="max-width: 280px;">
+            <h3 style="
+                font-size: 0.8rem;
+                letter-spacing: 0.15em;
+                text-transform: uppercase;
+                color: #fff;
+                margin: 0 0 24px 0;
+                font-family: 'Arial', sans-serif;
+                font-weight: 700;
+            ">Supporta</h3>
+            <p style="
+                font-size: 0.95rem;
+                line-height: 1.7;
+                color: #888;
+                margin: 0 0 28px 0;
+            ">
+                Questo progetto è possibile grazie al supporto dell'associazione Transit Traces e di organizzazioni umanitarie.
+            </p>
+            <a href="/supporta" style="
+                display: inline-block;
+                border: 1px solid #c26a2a;
+                color: #c26a2a;
+                text-decoration: none;
+                padding: 14px 32px;
+                font-size: 0.75rem;
+                letter-spacing: 0.15em;
+                text-transform: uppercase;
+                font-family: 'Arial', sans-serif;
+                font-weight: 700;
+                transition: background 0.2s, color 0.2s;
+            "
+            onmouseover="this.style.background='#c26a2a'; this.style.color='#fff';"
+            onmouseout="this.style.background='transparent'; this.style.color='#e56306';"
+            >Fai una donazione</a>
+        </div>
+    </div>
+
+    <!-- Divider -->
+    <div style="border-top: 1px solid #2a2a2a; padding: 24px 0;">
+        <div style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        ">
+            <p style="margin: 0; font-size: 0.85rem; color: #555;">
+                &copy; 2024 Transit Traces. Tutti i diritti riservati.
+            </p>
+            <nav style="display: flex; gap: 30px;">
+                <a href="/privacy" style="color: #555; text-decoration: none; font-size: 0.85rem;" onmouseover="this.style.color='#aaa'" onmouseout="this.style.color='#555'">Privacy</a>
+                <a href="/termini" style="color: #555; text-decoration: none; font-size: 0.85rem;" onmouseover="this.style.color='#aaa'" onmouseout="this.style.color='#555'">Termini</a>
+                <a href="/accessibilita" style="color: #555; text-decoration: none; font-size: 0.85rem;" onmouseover="this.style.color='#aaa'" onmouseout="this.style.color='#555'">Accessibilità</a>
+            </nav>
+        </div>
+    </div>
+</footer>
 <script>
     document.querySelector('a[href="#map"]').addEventListener('click', function(e) {
     e.preventDefault();

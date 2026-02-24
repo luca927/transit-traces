@@ -159,7 +159,10 @@ function addIllustrationMarker(lat, lng, city) {
         iconSize: [40, 40]
     });
 
-    L.marker([lat, lng], { icon: icon })
+    // CAMBIA SOLO QUESTA RIGA:
+    const pixelCoords = window.geoToPixel(lat, lng);
+
+    L.marker(pixelCoords, { icon: icon })
      .addTo(window.placesLayer)
      .on('click', () => goToCityPage(city.country, city.id));
 }
