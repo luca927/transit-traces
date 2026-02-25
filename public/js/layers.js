@@ -153,16 +153,19 @@ function createPopupContent(place) {
 // =========================
 
 function addIllustrationMarker(lat, lng, city) {
+    console.log(`${city.name} → pixel: ${city.pixel}, geoToPixel: ${window.geoToPixel(lat, lng)}`);
+    
     const icon = L.divIcon({
         className: 'city-marker-icon',
         html: `<span>${city.icon}</span>`,
-        iconSize: [40, 40]
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
     });
 
-    // CAMBIA SOLO QUESTA RIGA:
-    const pixelCoords = window.geoToPixel(lat, lng);
+    // Usa pixel diretto se disponibile
+    const coords = city.pixel ? city.pixel : window.geoToPixel(lat, lng);
 
-    L.marker(pixelCoords, { icon: icon })
+    L.marker(coords, { icon: icon })
      .addTo(window.placesLayer)
      .on('click', () => goToCityPage(city.country, city.id));
 }

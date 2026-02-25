@@ -34,18 +34,6 @@
             font-weight: bold; transition: 0.3s; text-transform: uppercase; background: white; color: #333;
         }
         .lang-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-
-        /* SIDEBAR CONTROLS */
-        .controls {
-            position: fixed; top: 100px; left: 20px; z-index: 4000;
-            width: 350px; background: white; border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.3); overflow: hidden;
-        }
-        .controls h3 {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white; margin: 0; padding: 20px; font-size: 1.2rem;
-        }
-        .controls-content { padding: 20px; display: flex; flex-direction: column; gap: 15px; }
         
         input, select {
             padding: 12px; border: 2px solid #eee; border-radius: 12px;
@@ -59,23 +47,6 @@
             font-weight: bold; cursor: pointer; transition: 0.3s;
         }
         .btn-main:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102,126,234,0.4); }
-
-        /* INFO BOX */
-        .info-box {
-            position: fixed; top: 100px; right: 20px; background: white;
-            padding: 20px; border-radius: 15px; box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-            z-index: 4000; max-width: 300px;
-        }
-        .info-box h2 { color: #2c3e50; font-size: 1.3rem; margin-bottom: 10px; }
-        .info-box p { color: #7f8c8d; font-size: 0.95rem; line-height: 1.6; }
-
-        /* STATISTICS */
-        #stats {
-            position: fixed; bottom: 20px; left: 20px;
-            background: rgba(255,255,255,0.95); padding: 12px 20px;
-            border-radius: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            z-index: 4000; font-weight: 600; color: #333;
-        }
 
         
         .leaflet-container { background: #1a1a1a !important; }
@@ -273,42 +244,11 @@
     </div>
 </header>
 
-<!-- SIDEBAR CONTROLS -->
-<div class="controls">
-    <h3 id="controls-title">🗺️ Esplora Stati e Città</h3>
-    <div class="controls-content">
-        <input type="text" id="search" placeholder="Cerca città o luoghi...">
-        <select id="filter">
-            <option value="">Tutti i luoghi</option>
-            <option value="città">🏛️ Città</option>
-            <option value="campo">⛺ Campi</option>
-            <option value="natura">🌊 Luoghi naturali</option>
-        </select>
-        <button class="btn-main" onclick="filterPlaces()">🔄 Aggiorna</button>
-    </div>
-</div>
-
-<!-- INFO BOX -->
-<div class="info-box">
-    <h2>Come Funziona</h2>
-    <p>
-        <strong style="color: #e74c3c;">1. Clicca sugli stati colorati</strong><br>
-        <span style="font-size: 0.85rem; color: #95a5a6;">
-            🔴 Bosnia • 🟠 Bulgaria • 🔵 Grecia
-        </span><br><br>
-        <strong>2.</strong> Esplora le <strong>città</strong> visitate<br>
-        <strong>3.</strong> Apri i <strong>dettagli</strong> completi
-    </p>
-</div>
-
-<!-- STATISTICS -->
-<div id="stats">📍 Caricamento...</div>
-
 <!-- MAPPA -->
 <div id="map"></div>
 
 <!-- AUDIO AMBIENTALE -->
-<audio id="ambient-audio" src="{{ asset('audio/ambient.mp3') }}" loop></audio>
+<audio id="ambient-audio" src="{{ ('audio/ambient.mp3') }}" loop></audio>
 
 <script src="{{ asset('js/layers.js') }}"></script>
 <script src="{{ asset('js/cities.js') }}"></script>
@@ -320,17 +260,16 @@
         // Mappa le coordinate geografiche reali → pixel dell'SVG
         // Calibra questi valori guardando l'immagine!
     function geoToPixel(lat, lng) {
-            // Estremi geografici della tua mappa SVG (da calibrare)
-        const latMin = 34.0,  latMax = 50.0;   // es: dal sud della Grecia al nord della Bosnia
-        const lngMin = 13.0,  lngMax = 30.0;
+    const latMin = 51.2,  latMax = 34.5;
+    const lngMin = 10.5,  lngMax = 32.8;
 
-        const svgW = 1754, svgH = 1240;
+    const svgW = 1754, svgH = 1240;
 
-        const x = ((lng - lngMin) / (lngMax - lngMin)) * svgW;
-        const y = svgH - ((lat - latMin) / (latMax - latMin)) * svgH; // Y invertito!
+    const x = ((lng - lngMin) / (lngMax - lngMin)) * svgW;
+    const y = ((lat - latMax) / (latMin - latMax)) * svgH;
 
-        return [y, x]; // Leaflet vuole [y, x] con CRS.Simple
-        }
+    return [y, x];
+}
 
     window.geoToPixel = geoToPixel;
     // =========================
@@ -380,15 +319,7 @@
 
         console.log('✅ Mappa inizializzata');
 
-        map.on('click', e => {
-        const px = `[${e.latlng.lat.toFixed(1)}, ${e.latlng.lng.toFixed(1)}]`;
-        console.log(`📍 Pixel SVG: y=${e.latlng.lat.toFixed(1)}, x=${e.latlng.lng.toFixed(1)}`);
-        navigator.clipboard.writeText(px);
-        console.log("✅ Coordinate pixel copiate!");
-    });
-});
-
-        // Audio ambientale
+         // Audio ambientale
         const audio = document.getElementById('ambient-audio');
             document.addEventListener('click', () => {
                 audio.volume = 0.3;
@@ -398,31 +329,28 @@
         // Auto-init senza splash
         window.mapEntered = true;
 
-    // =========================
-    // INTEGRAZIONE CITTÀ SU PLACES
-    // =========================
-
-    window.addEventListener('mapReady', () => {
-        console.log('🏙️ Integro città in allPlaces e creo marker...');
-        
-        // 1️⃣ Popola allPlaces
-        if (window.cities) {
-            cities.forEach(city => {
-                const exists = window.allPlaces.some(p => p.id === city.id);
-                if (!exists) window.allPlaces.push(city);
-            });
-        }
-
-        // 2️⃣ Aggiungi marker sulla mappa
-        window.allPlaces.forEach(city => {
-            const marker = L.marker(geoToPixel(city.lat, city.lng), { title: city.name })
-                .bindPopup(window.createCityPopupWithLink(city))
-                .addTo(window.placesLayer);
-            
-            marker.on('click', () => window.goToCityPage(city.country, city.id));
+       map.on('click', e => {
+            const px = `[${e.latlng.lat.toFixed(1)}, ${e.latlng.lng.toFixed(1)}]`;
+            console.log(`📍 Pixel SVG: y=${e.latlng.lat.toFixed(1)}, x=${e.latlng.lng.toFixed(1)}`);
+            navigator.clipboard.writeText(px);
+            console.log("✅ Coordinate pixel copiate!");
         });
 
-        console.log('✅ Marker delle città creati:', window.allPlaces.length);
+        window.dispatchEvent(new Event('mapReady')); // ← fuori dal click
+
+    }); // ← chiude il load
+
+    window.addEventListener('mapReady', () => {
+        if (window.mergeCitiesIntoPlaces) {
+            window.mergeCitiesIntoPlaces();
+        }
+
+        setTimeout(() => {
+            window.allPlaces.forEach(city => {
+                window.addIllustrationMarker(city.lat, city.lng, city);
+            });
+            console.log('✅ Marker creati:', window.allPlaces.length);
+        }, 300);
     });
 
     function setLanguage(lang) {
@@ -434,90 +362,24 @@
         if (lang === 'it') {
             itBtn.classList.add('active');
             enBtn.classList.remove('active');
-            document.getElementById('controls-title').textContent = '🗺️ Esplora Stati e Città';
-            document.getElementById('search').placeholder = 'Cerca città o luoghi...';
         } else {
             enBtn.classList.add('active');
             itBtn.classList.remove('active');
-            document.getElementById('controls-title').textContent = '🗺️ Explore States and Cities';
-            document.getElementById('search').placeholder = 'Search cities or places...';
         }
 
-        if (window.filterPlaces) {
-            window.filterPlaces();
-        }
     }
 
-    // =========================
-    // FILTER PLACES
-    // =========================
-
-    function filterPlaces() {
-        if (!window.placesLayer) {
-            console.error('❌ placesLayer non definito');
-            return;
-        }
-
-        window.placesLayer.clearLayers();
-
-        const search = document.getElementById('search').value.toLowerCase();
-        const filter = document.getElementById('filter').value;
-
-        const filtered = window.allPlaces.filter(place => {
-            const matchesSearch = !search ||
-                place.name.toLowerCase().includes(search) ||
-                (place.description && place.description.toLowerCase().includes(search));
-
-            const matchesFilter = !filter || place.type === filter;
-
-            return matchesSearch && matchesFilter;
-        });
-
-        filtered.forEach(place => {
-            if (window.addIllustrationMarker) {
-                window.addIllustrationMarker(place.lat, place.lng, place);
-            }
-        });
-
-        // Aggiorna statistiche
-        const statsEl = document.getElementById('stats');
-        if (statsEl) {
-            const text = window.currentLang === 'it' 
-                ? `📍 ${filtered.length}/${window.allPlaces.length} luoghi mostrati`
-                : `📍 ${filtered.length}/${window.allPlaces.length} places shown`;
-            statsEl.textContent = text;
-        }
-
-        console.log(`✅ Filtrati ${filtered.length} luoghi`);
-    }
-
-    // Event listeners
-    document.getElementById('search').addEventListener('keyup', filterPlaces);
-    document.getElementById('filter').addEventListener('change', filterPlaces);
+    
 
     // RENDI GLOBALE
-    window.filterPlaces = filterPlaces;
     window.setLanguage = setLanguage;
 
     // INIZIALIZZAZIONE FINALE
 
     window.addEventListener('mapReady', () => {
-        console.log('🎉 Sistema gerarchico pronto!');
-        
-        // Aspetta che cities.js abbia popolato allPlaces
-        setTimeout(() => {
-            filterPlaces();
+    console.log('🎉 Sistema gerarchico pronto!');
+});
             
-            // Statistiche iniziali
-            const statsEl = document.getElementById('stats');
-            if (statsEl) {
-                const text = window.currentLang === 'it'
-                    ? `📍 ${window.allPlaces.length} luoghi disponibili | 3 stati`
-                    : `📍 ${window.allPlaces.length} places available | 3 countries`;
-                statsEl.textContent = text;
-            }
-        }, 1500);
-    });
 
     console.log('✅ mappa.blade.php caricato completamente');
 </script>

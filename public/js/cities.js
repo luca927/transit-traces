@@ -11,6 +11,7 @@ const cities = [
         country: 'bosnia',
         lat: 43.8564,
         lng: 18.4131,
+        pixel: [618.2, 1291.4],
         type: 'città',
         icon: '🏛️',
         description: 'Capitale della Bosnia, crocevia di culture e testimone di storia',
@@ -50,6 +51,7 @@ const cities = [
         country: 'bosnia',
         lat: 44.8147,
         lng: 15.8692,
+        pixel: [976.1, 505.7],
         type: 'campo',
         icon: '🏕️',
         description: 'Confine con la Croazia, ultima tappa prima dell\'UE',
@@ -87,6 +89,7 @@ const cities = [
         country: 'bulgaria',
         lat: 41.9317,
         lng: 25.9092,
+        pixel: [706.2, 1141.5],
         type: 'campo',
         icon: '⛺',
         description: 'Centro di accoglienza nel sud della Bulgaria',
@@ -124,6 +127,7 @@ const cities = [
         country: 'greece',
         lat: 39.0742,
         lng: 26.3233,
+        pixel: [460.2, 1093.5],
         type: 'natura',
         icon: '🏝️',
         description: 'Isola dell\'Egeo, primo approdo in Europa',
@@ -280,7 +284,6 @@ function goToCityPage(country, cityId) {
     const city = getCityById(cityId);
     if (!city) return;
 
-    // USA geoToPixel invece delle coordinate geografiche
     const coords = window.geoToPixel(city.lat, city.lng);
 
     window.map.flyTo(coords, 2, {
@@ -290,15 +293,21 @@ function goToCityPage(country, cityId) {
 
     setTimeout(() => {
         openCityDrawer(city);
+
+        // Audio ambient — continua sempre a suonare
         const ambientAudio = document.getElementById('ambient-audio');
-        if (city.audio) {
-            ambientAudio.src = city.audio;
-            ambientAudio.volume = 0.5;
-            ambientAudio.play();
+        if (ambientAudio.paused) {
+            ambientAudio.volume = 0.3;
+            ambientAudio.play().catch(e => console.warn('Audio bloccato:', e));
         }
+
+        // Audio città — solo quando il file esiste
+        // if (city.audio) {
+        //     ambientAudio.src = city.audio;
+        //     ambientAudio.play();
+        // }
     }, 2000);
 }
-
 // =========================
 // DRAWER DETTAGLIO CITTÀ
 // =========================
@@ -399,37 +408,6 @@ function closeCityDrawer() {
     }
 }
 
-    // Esempio semplificato: dovresti caricare un file GeoJSON qui
-    // Per ora creiamo dei cerchi grandi o rettangoli per testare il click
-    const regions = [
-        { id: 'bosnia', center: [44.1, 17.9], name: 'Bosnia ed Erzegovina' },
-        { id: 'bulgaria', center: [42.7, 25.2], name: 'Bulgaria' },
-        { id: 'greece', center: [39.0, 22.0], name: 'Grecia' }
-    ];
-
-    regions.forEach(region => {
-        const style = countryStyles[region.id];
-        // Crea un'area interattiva
-        const zone = L.circle(region.center, {
-            radius: 150000, // 150km
-            color: style.color,
-            fillColor: style.color,
-            fillOpacity: style.fillOpacity,
-            className: 'country-polygon-soft'
-        }).addTo(window.map);
-
-        zone.bindTooltip(region.name, { sticky: true, className: 'country-tooltip-soft' });
-
-        zone.on('click', () => {
-            window.map.flyTo(region.center, 7);
-            // Filtra i marker per mostrare solo quelli di questo paese
-            document.getElementById('search').value = region.id;
-            filterPlaces();
-        });
-    });
-    console.log("🌍 Paesi inizializzati");
-};
-
 // =========================
 // ESPORTA GLOBALI
 // =========================
@@ -444,13 +422,5 @@ window.goToCityPage = goToCityPage;
 window.openCityDrawer = openCityDrawer;
 window.closeCityDrawer = closeCityDrawer;
 
-// =========================
-// AUTO-INIZIALIZZAZIONE
-// =========================
-
-window.addEventListener('mapReady', () => {
-    console.log('🏙️ Cities.js: Integro città nel database...');
-    mergeCitiesIntoPlaces();
-});
 
 console.log('✅ Places.js caricato - 4 città definite');
