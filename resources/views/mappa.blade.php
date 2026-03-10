@@ -18,8 +18,18 @@
             --dark: #0e0c0b;
         }
 
-        body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
-        #map { height: 100vh; width: 100vw; background: #222; }
+       body, html { 
+            margin: 0; 
+            padding: 0; 
+            height: 100%; 
+            overflow: hidden; 
+        }
+
+        #map { 
+            height: 100vh; 
+            width: 100vw; 
+            background: #000;
+        }
 
         /* HEADER & LANGUAGE */
         header {
@@ -49,7 +59,9 @@
         .btn-main:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102,126,234,0.4); }
 
         
-        .leaflet-container { background: #1a1a1a !important; }
+        .leaflet-container {
+            background: #ffffff !important;
+        }
 
         /* COUNTRY POLYGON STYLING */
         .country-polygon {
@@ -231,7 +243,7 @@
     </style>
 </head>
 <body>
-<!-- HEADER -->
+<!-- HEADER
 <header>
     <div class="socials" style="color: #333; font-size: 1.2rem; display: flex; gap: 15px;">
         <i class="fab fa-facebook"></i>
@@ -242,7 +254,7 @@
         <button id="it-btn" class="lang-btn active" onclick="setLanguage('it')">IT</button>
         <button id="en-btn" class="lang-btn" onclick="setLanguage('en')">EN</button>
     </div>
-</header>
+</header> -->
 
 <!-- MAPPA -->
 <div id="map"></div>
@@ -254,7 +266,7 @@
 <script src="{{ asset('js/cities.js') }}"></script>
 <script src="{{ asset('js/countries.js') }}"></script>
 
-<!-- SCRIPTS - ORDINE IMPORTANTE -->
+
 <script>
 
         // Mappa le coordinate geografiche reali → pixel dell'SVG
@@ -308,10 +320,16 @@
         // Carica l'SVG come layer immagine di sfondo
         L.imageOverlay("{{ asset('images/MAP.svg') }}", bounds).addTo(map);
 
-        // Fit della mappa ai bounds dell'immagine
-        map.fitBounds(bounds);
 
-        // Zoom control
+        // Sostituisci map.fitBounds(...) con questo
+        const scaleX = window.innerWidth / svgWidth;
+        const scaleY = window.innerHeight / svgHeight;
+        const scale = Math.min(scaleX, scaleY); // max invece di min = copre tutto
+        const zoom = Math.log2(scale);
+
+        map.setView([svgHeight / 2, svgWidth / 2], zoom);
+        map.setMaxBounds([[-100, -100], [svgHeight + 100, svgWidth + 100]]);
+
         L.control.zoom({ position: 'bottomright' }).addTo(map);
 
         // Layer group per i marker delle città
@@ -340,17 +358,68 @@
 
     }); // ← chiude il load
 
-    window.addEventListener('mapReady', () => {
-        if (window.mergeCitiesIntoPlaces) {
-            window.mergeCitiesIntoPlaces();
-        }
+        window.addEventListener('mapReady', () => {
+    if (window.mergeCitiesIntoPlaces) {
+        window.mergeCitiesIntoPlaces();
+    }
 
-        setTimeout(() => {
+    setTimeout(() => {
+        window.allPlaces.forEach(city => {
+            window.addIllustrationMarker(city.lat, city.lng, city);
+        });
+        console.log('✅ Marker creati:', window.allPlaces.length);
+
+        // LINEA DEL TRAGITTO
+        const routeOrder = ['istanbul', 'izmir', 'lesvos', 'dimitrovgrad', 'harmanli', 'srebrenica', 'bihac', 'sarajevo', 'trieste'];
+
+        const routeCoords = routeOrder
+            .map(id => window.allPlaces.find(c => c.id === id))
+            .filter(Boolean)
+            .map(c => c.pixel);
+
+         const polyline = L.polyline(routeCoords, {
+            color: '#c26a2a',
+            weight: 4,
+            opacity: 0.8,
+            dashArray: '6, 8',
+            lineJoin: 'round'
+        }).addTo(window.map);
+
+        // Hover effect
+        polyline.on('mouseover', function() {
+            this.setStyle({ weight: 6, opacity: 1, dashArray: null });
+            window.map.getContainer().style.cursor = 'pointer';
+        });
+
+        polyline.on('mouseout', function() {
+            this.setStyle({ weight: 4, opacity: 0.8, dashArray: '6, 8' });
+            window.map.getContainer().style.cursor = '';
+        });
+
+        // Click — trova la città più vicina al punto cliccato
+        polyline.on('click', function(e) {
+            let minDist = Infinity;
+            let closestCity = null;
+
             window.allPlaces.forEach(city => {
-                window.addIllustrationMarker(city.lat, city.lng, city);
+                if (!city.pixel) return;
+                const dy = city.pixel[0] - e.latlng.lat;
+                const dx = city.pixel[1] - e.latlng.lng;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closestCity = city;
+                }
             });
-            console.log('✅ Marker creati:', window.allPlaces.length);
-        }, 300);
+
+            if (closestCity) {
+                window.goToCityPage(closestCity.country, closestCity.id);
+            }
+        });
+
+        console.log('✅ Tragitto disegnato');
+
+    }, 300);
     });
 
     function setLanguage(lang) {
