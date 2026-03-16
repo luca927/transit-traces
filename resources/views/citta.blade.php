@@ -26,39 +26,41 @@
             width: 100vw;
         }
 
-        /* GALLERIA FULLSCREEN */
-        .gallery {
+        /* STRIP ORIZZONTALE */
+        .gallery-strip {
             position: fixed; inset: 0;
-            background: #000;
+            overflow: hidden;
+        }
+
+        .slides-track {
+            display: flex;
+            height: 100%;
+            transition: transform 0.55s cubic-bezier(0.77, 0, 0.175, 1);
+            will-change: transform;
         }
 
         /* SLIDE */
         .slide {
-            position: absolute; inset: 0;
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0;
-            transition: opacity 0.6s ease;
-            pointer-events: none;
-        }
-
-        .slide.active {
-            opacity: 1;
-            pointer-events: all;
+            flex: 0 0 100vw;
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
         }
 
         /* FOTO */
-        .slide-photo img {
-            width: 100vw; height: 100vh;
+        .slide img {
+            width: 100%; height: 100%;
             object-fit: cover;
+            display: block;
         }
 
         .slide-photo-placeholder {
-            width: 100vw; height: 100vh;
+            width: 100%; height: 100%;
             background: linear-gradient(135deg, #1a1410, #0d0b08);
             display: flex; flex-direction: column;
             align-items: center; justify-content: center; gap: 1rem;
         }
-
         .slide-photo-placeholder i { font-size: 3rem; color: rgba(194,106,42,0.3); }
         .slide-photo-placeholder p {
             font-family: 'Cormorant Garamond', serif;
@@ -68,12 +70,11 @@
 
         /* VIDEO */
         .slide-video-placeholder {
-            width: 100vw; height: 100vh;
+            width: 100%; height: 100%;
             background: #0d0b08;
             display: flex; flex-direction: column;
             align-items: center; justify-content: center; gap: 1.5rem;
         }
-
         .play-circle {
             width: 80px; height: 80px;
             border: 1px solid rgba(194,106,42,0.4);
@@ -82,15 +83,15 @@
         }
         .play-circle i { color: var(--ochre); font-size: 1.5rem; margin-left: 5px; }
 
-        /* OVERLAY */
         .slide-overlay {
             position: absolute; inset: 0;
             background: linear-gradient(
                 to top,
                 rgba(0,0,0,0.8) 0%,
-                transparent 40%,
+                rgba(0,0,0,0.5) 18%,
+                transparent 45%,
                 transparent 60%,
-                rgba(0,0,0,0.4) 100%
+                rgba(0,0,0,0.35) 100%
             );
             pointer-events: none;
         }
@@ -101,38 +102,17 @@
             bottom: 5rem; left: 4rem;
             z-index: 10;
         }
-
         .slide-city-name {
             font-family: 'Bebas Neue', sans-serif;
             font-size: clamp(3rem, 8vw, 6rem);
             line-height: 0.85; color: var(--paper);
             text-shadow: 0 2px 20px rgba(0,0,0,0.5);
         }
-
         .slide-country {
             font-size: 0.7rem; letter-spacing: 0.3em;
             text-transform: uppercase; color: var(--ochre);
             margin-bottom: 0.5rem; display: block;
         }
-
-        .slide-caption {
-            margin-top: 0.8rem;
-            font-family: 'Cormorant Garamond', serif;
-            font-style: italic; font-size: 1.1rem;
-            color: rgba(245,240,232,0.6);
-            max-width: 500px; line-height: 1.5;
-        }
-
-        /* COUNTER */
-        .slide-counter {
-            position: absolute;
-            bottom: 5rem; right: 4rem;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1rem; letter-spacing: 0.1em;
-            color: rgba(245,240,232,0.3);
-            z-index: 10;
-        }
-        .slide-counter span { color: var(--paper); }
 
         .slide-type {
             position: absolute;
@@ -143,49 +123,62 @@
             z-index: 10;
         }
 
-        /* FRECCE */
+        /* FRECCE — sottili, appaiono solo quando necessario */
         .nav-arrow {
             position: fixed;
             top: 50%; transform: translateY(-50%);
             z-index: 100;
             background: none; border: none;
-            cursor: pointer; padding: 1.5rem;
-            opacity: 0.3; transition: opacity 0.3s;
+            cursor: pointer; padding: 1rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
         }
-        .nav-arrow:hover { opacity: 1; }
-        .nav-arrow.prev { left: 1rem; }
-        .nav-arrow.next { right: 1rem; }
-        .nav-arrow i { color: var(--paper); font-size: 1.5rem; }
+        .nav-arrow.visible {
+            opacity: 0.35;
+            pointer-events: all;
+        }
+        .nav-arrow:hover { opacity: 1 !important; }
+        .nav-arrow.prev { left: 1.2rem; }
+        .nav-arrow.next { right: 1.2rem; }
+        .nav-arrow i { color: var(--paper); font-size: 1.1rem; }
 
-        /* DOTS */
-        .nav-dots {
+        /* PROGRESS BAR */
+        .progress-track {
             position: fixed;
-            bottom: 2rem; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 8px; z-index: 100;
+            bottom: 0; left: 0; right: 0;
+            height: 2px;
+            background: rgba(245,240,232,0.08);
+            z-index: 199;
         }
-
-        .dot {
-            width: 6px; height: 6px;
-            border-radius: 50%;
-            background: rgba(245,240,232,0.3);
-            cursor: pointer; transition: all 0.3s;
-            border: none; padding: 0;
-        }
-
-        .dot.active {
+        .progress-bar {
+            position: fixed;
+            bottom: 0; left: 0;
+            height: 2px;
             background: var(--ochre);
-            width: 20px; border-radius: 3px;
+            transition: width 0.55s cubic-bezier(0.77, 0, 0.175, 1);
+            z-index: 200;
         }
+
+        /* CONTATORE */
+        .slide-counter {
+            position: fixed;
+            bottom: 1.5rem; right: 3rem;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 0.9rem; letter-spacing: 0.08em;
+            color: rgba(245,240,232,0.25);
+            z-index: 200;
+        }
+        .slide-counter span { color: rgba(245,240,232,0.55); }
 
         /* HEADER */
         .page-header {
             position: fixed; top: 0; left: 0; right: 0;
             padding: 1.5rem 3rem;
-            z-index: 200;
+            z-index: 300;
             display: flex; justify-content: space-between; align-items: center;
             background: linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
         }
-
         .logo {
             font-family: 'Bebas Neue', sans-serif;
             font-size: 1.4rem; letter-spacing: 0.1em;
@@ -202,53 +195,34 @@
         }
         .back-btn:hover { opacity: 1; }
 
-        /* STORIA */
-        .story-panel {
+        /* NAVIGAZIONE CITTÀ — in basso, appare solo su prima/ultima slide */
+        .city-nav-btn {
             position: fixed;
-            bottom: 0; left: 0; right: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.97) 70%, transparent);
-            padding: 6rem 4rem 3rem;
-            transform: translateY(100%);
-            transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-            z-index: 150;
-        }
-        .story-panel.open { transform: translateY(0); }
-
-        .story-panel p {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.3rem; line-height: 1.8;
-            font-weight: 300; max-width: 700px;
-            color: var(--paper); white-space: pre-line;
-        }
-
-        .story-toggle {
-            position: fixed;
-            bottom: 2rem; left: 4rem;
-            z-index: 200;
-            background: none;
-            border: 1px solid rgba(245,240,232,0.2);
-            color: rgba(245,240,232,0.4);
-            padding: 8px 16px; cursor: pointer;
-            font-size: 0.7rem; letter-spacing: 0.15em;
-            text-transform: uppercase; transition: all 0.3s;
-            font-family: 'DM Sans', sans-serif;
-        }
-        .story-toggle:hover { border-color: var(--ochre); color: var(--ochre); }
-
-        /* PREV/NEXT CITTÀ */
-        .city-prev, .city-next {
-            position: fixed; top: 50%;
-            z-index: 200;
+            bottom: 4.5rem;
+            z-index: 300;
+            display: flex; align-items: center; gap: 0.8rem;
+            color: rgba(245,240,232,0.5);
+            text-decoration: none;
             font-size: 0.65rem; letter-spacing: 0.2em;
             text-transform: uppercase;
-            color: rgba(245,240,232,0.3);
-            text-decoration: none;
-            transition: color 0.3s;
-            writing-mode: vertical-rl;
+            transition: color 0.3s, opacity 0.4s;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
         }
-        .city-prev { left: 0.3rem; transform: translateY(-50%) rotate(180deg); }
-        .city-next { right: 0.3rem; transform: translateY(-50%); }
-        .city-prev:hover, .city-next:hover { color: var(--ochre); }
+        .city-nav-btn.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .city-nav-btn:hover { color: var(--paper); }
+        .city-nav-btn i { font-size: 0.6rem; }
+        .city-nav-btn .city-label {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem; letter-spacing: 0.1em;
+            color: inherit;
+        }
+        .city-nav-btn.prev-city { left: 4rem; bottom: 1.8rem; }
+        .city-nav-btn.next-city { right: 4rem; bottom: 4.5rem; }
     </style>
 </head>
 <body>
@@ -261,257 +235,222 @@
     </a>
 </header>
 
-<div class="gallery" id="gallery"></div>
+<!-- NAVIGAZIONE CITTÀ IN BASSO -->
+<a href="#" class="city-nav-btn prev-city" id="cityPrev">
+    <i class="fas fa-chevron-left"></i>
+    <span class="city-label" id="cityPrevName"></span>
+</a>
+<a href="#" class="city-nav-btn next-city" id="cityNext">
+    <span class="city-label" id="cityNextName"></span>
+    <i class="fas fa-chevron-right"></i>
+</a>
 
-<button class="nav-arrow prev" onclick="changeSlide(-1)">
+<div class="gallery-strip">
+    <div class="slides-track" id="slidesTrack"></div>
+</div>
+
+<button class="nav-arrow prev" id="arrowPrev" onclick="changeSlide(-1)">
     <i class="fas fa-chevron-left"></i>
 </button>
-<button class="nav-arrow next" onclick="changeSlide(1)">
+<button class="nav-arrow next" id="arrowNext" onclick="changeSlide(1)">
     <i class="fas fa-chevron-right"></i>
 </button>
 
-<div class="nav-dots" id="navDots"></div>
+<div class="progress-track"></div>
+<div class="progress-bar" id="progressBar"></div>
 
-<button class="story-toggle" id="storyToggle" onclick="toggleStory()">
-    <i class="fas fa-quote-left" style="margin-right:6px"></i>
-    <span id="storyToggleText">Leggi la storia</span>
-</button>
-
-<div class="story-panel" id="storyPanel">
-    <p id="storyText"></p>
+<div class="slide-counter">
+    <span id="counterCurrent">1</span> / <span id="counterTotal">1</span>
 </div>
-
-<a href="#" class="city-prev" id="cityPrev" style="display:none"></a>
-<a href="#" class="city-next" id="cityNext" style="display:none"></a>
 
 <script>
     const citiesData = {
         istanbul: {
-            name: 'Istanbul', country: 'Turchia', date: '',
-            story: '',
+            name: 'Istanbul', country: 'Turchia',
             media: [
-                { type: 'photo', src: '', caption: '' },
-                { type: 'photo', src: '', caption: '' },
+                { type: 'photo', src: '' },
+                { type: 'photo', src: '' },
             ]
         },
         izmir: {
-            name: 'Izmir', country: 'Turchia', date: '',
-            story: '',
+            name: 'Izmir', country: 'Turchia',
             media: [
-                { type: 'photo', src: '', caption: '' },
+                { type: 'photo', src: '' },
             ]
         },
         lesvos: {
-            name: 'Lesvos', country: 'Grecia', date: '5 Marzo 2024',
-            story: `Lesvos è diventata simbolo della crisi migratoria europea. 
-Questa isola greca dell'Egeo, a pochi chilometri dalla Turchia, ha accolto centinaia di migliaia di rifugiati che attraversano il mare su gommoni pericolanti.
-Il campo di Moria, ora chiuso, era il più grande campo profughi d'Europa.`,
+            name: 'Lesvos', country: 'Grecia',
             media: [
-                { type: 'photo', src: '', caption: 'Le spiagge di Lesvos' },
-                { type: 'photo', src: '', caption: 'Il campo di Moria' },
-                { type: 'video', src: '', caption: 'Video — Lesvos' },
+                { type: 'photo', src: '' },
+                { type: 'photo', src: '' },
+                { type: 'video', src: '' },
             ]
         },
         idomeni: {
-            name: 'Idomeni', country: 'Grecia', date: '',
-            story: '',
+            name: 'Idomeni', country: 'Grecia',
             media: [
-                { type: 'photo', src: '/images/interno5.png', caption: '' },
-                { type: 'photo', src: '/images/interno6.png', caption: '' },
-                { type: 'video', src: '', caption: 'Video — Idomeni' },
+                { type: 'photo', src: '/images/interno5.png' },
+                { type: 'photo', src: '/images/interno6.png' },
+                { type: 'video', src: '' },
             ]
         },
         dimitrovgrad: {
-            name: 'Dimitrovgrad', country: 'Serbia', date: '',
-            story: '',
+            name: 'Dimitrovgrad', country: 'Serbia',
             media: [
-                { type: 'photo', src: '', caption: '' },
+                { type: 'photo', src: '' },
             ]
         },
         harmanli: {
-            name: 'Harmanli', country: 'Bulgaria', date: '10 Marzo 2024',
-            story: `Harmanli ospita uno dei più grandi centri di accoglienza per migranti della Bulgaria.
-Situato vicino al confine turco, questo centro è spesso il primo punto di arrivo in Europa per chi proviene dal Medio Oriente e dall'Asia.`,
+            name: 'Harmanli', country: 'Bulgaria',
             media: [
-                { type: 'photo', src: '', caption: 'Centro di accoglienza' },
-                { type: 'video', src: '', caption: 'Video — Harmanli' },
+                { type: 'photo', src: '' },
+                { type: 'video', src: '' },
             ]
         },
         srebrenica: {
-            name: 'Srebrenica', country: 'Bosnia ed Erzegovina', date: '',
-            story: '',
+            name: 'Srebrenica', country: 'Bosnia ed Erzegovina',
             media: [
-                { type: 'photo', src: '', caption: '' },
-                { type: 'photo', src: '', caption: '' },
-                { type: 'video', src: '', caption: '' },
+                { type: 'photo', src: '' },
+                { type: 'photo', src: '' },
+                { type: 'video', src: '' },
             ]
         },
         bihac: {
-            name: 'Bihać', country: 'Bosnia ed Erzegovina', date: '25 Marzo 2024',
-            story: `Bihać è diventata tristemente famosa come "porta d'Europa" lungo la rotta balcanica.
-Qui si concentrano migliaia di migranti che aspettano per mesi di attraversare il confine croato, affrontando il pericoloso "Game" — il tentativo di attraversare illegalmente la frontiera.`,
+            name: 'Bihać', country: 'Bosnia ed Erzegovina',
             media: [
-                { type: 'photo', src: '', caption: 'Campo profughi di Lipa' },
-                { type: 'photo', src: '', caption: 'Confine croato' },
-                { type: 'video', src: '', caption: 'Video — Bihać' },
+                { type: 'photo', src: '' },
+                { type: 'photo', src: '' },
+                { type: 'video', src: '' },
             ]
         },
         sarajevo: {
-            name: 'Sarajevo', country: 'Bosnia ed Erzegovina', date: '22 Marzo 2024',
-            story: `Sarajevo, la "Gerusalemme d'Europa", è stata per secoli un punto d'incontro tra Oriente e Occidente. 
-Durante la guerra degli anni '90, la città visse un assedio di 1.425 giorni, il più lungo nella storia moderna.
-Oggi, Sarajevo è un simbolo di rinascita e convivenza.`,
+            name: 'Sarajevo', country: 'Bosnia ed Erzegovina',
             media: [
-                { type: 'photo', src: '', caption: 'Baščaršija' },
-                { type: 'photo', src: '', caption: 'Ponte Latino' },
-                { type: 'video', src: '', caption: 'Video — Sarajevo' },
+                { type: 'photo', src: '' },
+                { type: 'photo', src: '' },
+                { type: 'video', src: '' },
             ]
         },
         trieste: {
-            name: 'Trieste', country: 'Italia', date: '',
-            story: '',
+            name: 'Trieste', country: 'Italia',
             media: [
-                { type: 'photo', src: '', caption: '' },
-                { type: 'photo', src: '', caption: '' },
+                { type: 'photo', src: '' },
+                { type: 'photo', src: '' },
             ]
         },
     };
 
-    const routeOrder = ['istanbul', 'izmir', 'lesvos', 'idomeni', 'dimitrovgrad', 'harmanli', 'srebrenica', 'bihac', 'sarajevo', 'trieste'];
+    const routeOrder = ['trieste', 'sarajevo', 'bihac', 'srebrenica', 'harmanli', 'dimitrovgrad', 'idomeni', 'lesvos', 'izmir', 'istanbul'];
 
     const cityId = "{{ $cityId }}";
     const city = citiesData[cityId];
     let currentSlide = 0;
-    let storyOpen = false;
 
     if (city) {
         document.title = `Migrart — ${city.name}`;
 
-        // Storia
-        if (city.story) {
-            document.getElementById('storyText').textContent = city.story;
-        } else {
-            document.getElementById('storyToggle').style.display = 'none';
-        }
-
-        // Build slides
-        const gallery = document.getElementById('gallery');
-        const dots = document.getElementById('navDots');
+        const track = document.getElementById('slidesTrack');
         const total = city.media.length;
+        document.getElementById('counterTotal').textContent = total;
 
         city.media.forEach((item, i) => {
             const slide = document.createElement('div');
-            slide.className = `slide slide-${item.type}${i === 0 ? ' active' : ''}`;
+            slide.className = 'slide';
 
-            const infoHTML = `
+            const overlay = `<div class="slide-overlay"></div>`;
+            const info = `
                 <div class="slide-info">
                     <span class="slide-country">${city.country}</span>
                     <h1 class="slide-city-name">${city.name}</h1>
-                    ${item.caption ? `<p class="slide-caption">${item.caption}</p>` : ''}
                 </div>
-                <div class="slide-counter"><span>${i + 1}</span> / ${total}</div>
                 <div class="slide-type">${item.type === 'photo' ? 'Foto' : 'Video'}</div>
             `;
 
             if (item.type === 'photo') {
                 if (item.src) {
-                    slide.innerHTML = `
-                        <img src="${item.src}" alt="${item.caption}" style="width:100vw;height:100vh;object-fit:cover;">
-                        <div class="slide-overlay"></div>
-                        ${infoHTML}
-                    `;
+                    slide.innerHTML = `<img src="${item.src}" alt="${city.name}">${overlay}${info}`;
                 } else {
                     slide.innerHTML = `
                         <div class="slide-photo-placeholder">
                             <i class="fas fa-image"></i>
-                            <p>${item.caption || 'Foto — da inserire'}</p>
-                        </div>
-                        <div class="slide-overlay"></div>
-                        ${infoHTML}
-                    `;
+                            <p>Foto — da inserire</p>
+                        </div>${overlay}${info}`;
                 }
             } else if (item.type === 'video') {
                 if (item.src) {
                     slide.innerHTML = `
-                        <video controls style="width:100vw;height:100vh;object-fit:contain;background:#000;">
+                        <video controls style="width:100%;height:100%;object-fit:contain;background:#000;">
                             <source src="${item.src}" type="video/mp4">
-                        </video>
-                        ${infoHTML}
-                    `;
+                        </video>${info}`;
                 } else {
                     slide.innerHTML = `
                         <div class="slide-video-placeholder">
                             <div class="play-circle"><i class="fas fa-play"></i></div>
                             <p style="font-family:'Cormorant Garamond',serif;font-style:italic;color:rgba(245,240,232,0.3);">
-                                ${item.caption || 'Video — da inserire'}
+                                Video — da inserire
                             </p>
-                        </div>
-                        ${infoHTML}
-                    `;
+                        </div>${info}`;
                 }
             }
 
-            gallery.appendChild(slide);
-
-            // Dot
-            const dot = document.createElement('button');
-            dot.className = `dot${i === 0 ? ' active' : ''}`;
-            dot.onclick = () => goToSlide(i);
-            dots.appendChild(dot);
+            track.appendChild(slide);
         });
 
         // Navigazione città prev/next
         const idx = routeOrder.indexOf(cityId);
-        if (idx > 0) {
+        const hasPrev = idx > 0;
+        const hasNext = idx < routeOrder.length - 1;
+
+        if (hasPrev) {
             const prevId = routeOrder[idx - 1];
-            const el = document.getElementById('cityPrev');
-            el.href = `/citta/${prevId}`;
-            el.textContent = citiesData[prevId]?.name || prevId;
-            el.style.display = 'block';
+            document.getElementById('cityPrevName').textContent = citiesData[prevId]?.name || prevId;
+            document.getElementById('cityPrev').href = `/citta/${prevId}`;
         }
-        if (idx < routeOrder.length - 1) {
+        if (hasNext) {
             const nextId = routeOrder[idx + 1];
-            const el = document.getElementById('cityNext');
-            el.href = `/citta/${nextId}`;
-            el.textContent = citiesData[nextId]?.name || nextId;
-            el.style.display = 'block';
+            document.getElementById('cityNextName').textContent = citiesData[nextId]?.name || nextId;
+            document.getElementById('cityNext').href = `/citta/${nextId}`;
         }
+
+        window._hasPrev = hasPrev;
+        window._hasNext = hasNext;
+
+        updateUI();
+    }
+
+    function updateUI() {
+        const total = city.media.length;
+        document.getElementById('slidesTrack').style.transform = `translateX(${-currentSlide * 100}vw)`;
+        document.getElementById('counterCurrent').textContent = currentSlide + 1;
+        document.getElementById('progressBar').style.width = `${((currentSlide + 1) / total) * 100}%`;
+
+        document.getElementById('arrowPrev').classList.toggle('visible', currentSlide > 0);
+        document.getElementById('arrowNext').classList.toggle('visible', currentSlide < total - 1);
+
+        // Città precedente — visibile solo sulla prima slide, solo se esiste
+        document.getElementById('cityPrev').classList.toggle('visible', currentSlide === 0 && window._hasPrev);
+        // Città successiva — visibile solo sull'ultima slide, solo se esiste
+        document.getElementById('cityNext').classList.toggle('visible', currentSlide === total - 1 && window._hasNext);
     }
 
     function goToSlide(index) {
-        const slides = document.querySelectorAll('.slide');
-        const dotEls = document.querySelectorAll('.dot');
-        if (index < 0 || index >= slides.length) return;
-
-        const currentVideo = slides[currentSlide]?.querySelector('video');
+        const total = city.media.length;
+        if (index < 0 || index >= total) return;
+        const currentVideo = document.querySelectorAll('.slide')[currentSlide]?.querySelector('video');
         if (currentVideo) currentVideo.pause();
-
-        slides[currentSlide].classList.remove('active');
-        dotEls[currentSlide].classList.remove('active');
         currentSlide = index;
-        slides[currentSlide].classList.add('active');
-        dotEls[currentSlide].classList.add('active');
+        updateUI();
     }
 
     function changeSlide(dir) {
-        const total = document.querySelectorAll('.slide').length;
-        let next = currentSlide + dir;
-        if (next < 0) next = total - 1;
-        if (next >= total) next = 0;
-        goToSlide(next);
-    }
-
-    function toggleStory() {
-        storyOpen = !storyOpen;
-        document.getElementById('storyPanel').classList.toggle('open', storyOpen);
-        document.getElementById('storyToggleText').textContent = storyOpen ? 'Chiudi' : 'Leggi la storia';
+        goToSlide(currentSlide + dir);
     }
 
     // Keyboard
     document.addEventListener('keydown', e => {
         if (e.key === 'ArrowRight' || e.key === 'ArrowDown') changeSlide(1);
         if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') changeSlide(-1);
-        if (e.key === 'Escape') { if (storyOpen) toggleStory(); else window.location.href = '/mappa'; }
+        if (e.key === 'Escape') window.location.href = '/mappa';
     });
 
     // Touch swipe
@@ -526,8 +465,8 @@ Oggi, Sarajevo è un simbolo di rinascita e convivenza.`,
     let scrollTimeout;
     document.addEventListener('wheel', e => {
         clearTimeout(scrollTimeout);
-        scrollTimeout = setTimeout(() => { changeSlide(e.deltaY > 0 ? 1 : -1); }, 50);
-    });
+        scrollTimeout = setTimeout(() => { changeSlide(e.deltaY > 0 ? 1 : -1); }, 60);
+    }, { passive: true });
 </script>
 </body>
 </html>
