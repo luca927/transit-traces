@@ -354,33 +354,9 @@ function createCityPopupWithLink(city) {
 // =========================
 
 function goToCityPage(country, cityId) {
-    const city = getCityById(cityId);
-    if (!city) return;
-
-    const coords = window.geoToPixel(city.lat, city.lng);
-
-    window.map.flyTo(coords, 2, {
-        animate: true,
-        duration: 2.5
-    });
-
-    setTimeout(() => {
-        openCityDrawer(city);
-
-        // Audio ambient — continua sempre a suonare
-        const ambientAudio = document.getElementById('ambient-audio');
-        if (ambientAudio.paused) {
-            ambientAudio.volume = 0.3;
-            ambientAudio.play().catch(e => console.warn('Audio bloccato:', e));
-        }
-
-        // Audio città — solo quando il file esiste
-        // if (city.audio) {
-        //     ambientAudio.src = city.audio;
-        //     ambientAudio.play();
-        // }
-    }, 2000);
+    window.location.href = `/citta/${cityId}`;
 }
+
 // =========================
 // DRAWER DETTAGLIO CITTÀ
 // =========================

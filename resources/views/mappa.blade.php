@@ -2,455 +2,320 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>Transit Traces 🗺️ Sistema Gerarchico</title>
-    
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Migrart — Mappa</title>
 
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --primary: #667eea;
-            --secondary: #764ba2;
-            --accent: #e67e22;
-            --dark: #0e0c0b;
+            --ochre: #c26a2a;
+            --paper: #f5f0e8;
+            --ink: #1a1410;
         }
 
-       body, html { 
-            margin: 0; 
-            padding: 0; 
-            height: 100%; 
-            overflow: hidden; 
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body, html {
+            width: 100%; height: 100%;
+            overflow: hidden;
+            background: #fff;
+            font-family: 'DM Sans', sans-serif;
         }
 
-        #map { 
-            height: 100vh; 
-            width: 100vw; 
-            background: #000;
+        /* CONTENITORE MAPPA */
+        .map-wrap {
+            position: fixed; inset: 0;
+            width: 100vw; height: 100vh;
         }
 
-        /* HEADER & LANGUAGE */
-        header {
-            position: fixed; top: 0; right: 0; padding: 15px 30px;
-            z-index: 5000; display: flex; gap: 20px; align-items: center;
-            background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);
-            border-bottom-left-radius: 30px; border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        .lang-btn {
-            padding: 8px 16px; border-radius: 20px; border: 2px solid #ddd; cursor: pointer;
-            font-weight: bold; transition: 0.3s; text-transform: uppercase; background: white; color: #333;
-        }
-        .lang-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-        
-        input, select {
-            padding: 12px; border: 2px solid #eee; border-radius: 12px;
-            font-size: 14px; outline: none; transition: 0.3s; width: 100%;
-        }
-        input:focus { border-color: var(--primary); }
-
-        .btn-main {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white; border: none; padding: 15px; border-radius: 12px;
-            font-weight: bold; cursor: pointer; transition: 0.3s;
-        }
-        .btn-main:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102,126,234,0.4); }
-
-        
-        .leaflet-container {
-            background: #ffffff !important;
+        /* IMMAGINE MAPPA */
+        .map-img {
+            width: 100%; height: 100%;
+            object-fit: contain;
+            object-position: center;
+            display: block;
+            user-select: none;
+            -webkit-user-drag: none;
         }
 
-        /* COUNTRY POLYGON STYLING */
-        .country-polygon {
-            cursor: pointer !important;
-            transition: all 0.3s ease !important;
-        }
-        
-        /* PULSING ANIMATION FOR COUNTRIES */
-        @keyframes countryPulse {
-            0%, 100% { filter: brightness(1); }
-            50% { filter: brightness(1.15); }
-        }
-        
-        .leaflet-interactive {
-            animation: countryPulse 3s ease-in-out infinite;
-        }
-        
-        /* COUNTRY LABEL HOVER */
-        .country-label:hover {
-            transform: scale(1.1) !important;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.5) !important;
+        /* SVG OVERLAY — linea tragitto */
+        .map-svg {
+            position: absolute; inset: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            overflow: visible;
         }
 
-        /* CUSTOM MARKERS */
-        .city-marker {
-            animation: cityPulse 2s infinite;
+        .route-line {
+            fill: none;
+            stroke: var(--ochre);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: 0.6;
         }
 
-        @keyframes cityPulse {
-            0%, 100% { 
-                transform: scale(1); 
-                filter: drop-shadow(0 0 8px rgba(102, 126, 234, 0.6)); 
-            }
-            50% { 
-                transform: scale(1.15); 
-                filter: drop-shadow(0 0 15px rgba(102, 126, 234, 0.9)); 
-            }
+        .route-line-hit {
+            fill: none;
+            stroke: transparent;
+            stroke-width: 30;
+            cursor: pointer;
+            pointer-events: all;
         }
 
-        /* SPLASH SCREEN */
-        .splash {
-            position: fixed; inset: 0; z-index: 9999; 
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            display: flex; align-items: center; justify-content: center; 
-            color: white; text-align: center; transition: opacity 0.5s;
-        }
-        .splash.hidden { opacity: 0; pointer-events: none; }
-
-        /* DRAWER CITTÀ */
-        #city-detail-drawer {
-            position: fixed; top: 0; right: -100%;
-            width: 600px; max-width: 90vw; height: 100vh;
-            background: white; z-index: 6000;
-            transition: right 0.7s cubic-bezier(0.19, 1, 0.22, 1);
-            box-shadow: -10px 0 40px rgba(0,0,0,0.3);
-            overflow-y: auto;
+        /* PUNTI CITTÀ */
+        .city-dot {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            z-index: 10;
         }
 
-        /* =========================
-   STILI SOFT PER I PAESI
-   ========================= */
-
-        /* Poligoni dei paesi - Stile minimalista */
-        .country-polygon-soft {
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* Tooltip discreto */
-        .country-tooltip-soft {
-            background: rgba(255, 255, 255, 0.95) !important;
-            border: none !important;
-            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15) !important;
-            border-radius: 8px !important;
-            padding: 8px 14px !important;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
-        }
-
-        .country-tooltip-soft::before {
-            border-top-color: rgba(255, 255, 255, 0.95) !important;
-        }
-
-        /* Popup informativo */
-        .country-info-popup-soft .leaflet-popup-content-wrapper {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-            padding: 20px;
-        }
-
-        .country-info-popup-soft .leaflet-popup-tip {
-            background: white;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        /* Label dei paesi - Effetto hover */
-        .country-label-soft:hover {
-            transform: scale(1.08) !important;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
-            opacity: 1 !important;
-        }
-
-        /* Animazioni smooth */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .country-popup-soft {
-            animation: fadeIn 0.3s ease-out;
-        }
-
-        /* Bottone back con effetto glassmorphism */
-        #back-to-overview-btn {
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
-
-        /* Stati responsive per mobile */
-        @media (max-width: 768px) {
-            .country-label-soft {
-                font-size: 11px !important;
-                padding: 4px 10px !important;
-            }
-            
-            #back-to-overview-btn {
-                left: 20px !important;
-                font-size: 12px !important;
-                padding: 8px 16px !important;
-            }
-        }
-
-        /* Effetto pulse per indicare interattività */
-        @keyframes softPulse {
-            0%, 100% {
-                box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4);
-            }
-            50% {
-                box-shadow: 0 0 0 10px rgba(231, 76, 60, 0);
-            }
-        }
-
-        .country-polygon-soft:hover {
-            animation: softPulse 2s infinite;
-        }
-
-        /* Cursore pointer sui paesi */
-        .country-polygon-soft {
-            cursor: pointer !important;
-        }
-
-        /* Stile per il messaggio "nessuna storia" */
-        .leaflet-popup-content p {
-            margin: 0;
-            line-height: 1.5;
-        }
-        /* Marker personalizzati stile Refugee Republic */
-        .city-marker-icon {
-            background: white;
-            border: 2px solid #667eea;
+        .city-dot-inner {
+            width: 10px; height: 10px;
+            background: var(--ochre);
+            border: 2px solid rgba(255,255,255,0.8);
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            box-shadow: 0 0 15px rgba(102, 126, 234, 0.5);
-            transition: all 0.3s;
+            box-shadow: 0 0 8px rgba(194,106,42,0.4);
+            transition: all 0.3s ease;
         }
 
-        .city-marker-icon:hover {
-            transform: scale(1.2);
-            background: #667eea;
+        .city-dot:hover .city-dot-inner {
+            width: 14px; height: 14px;
+            background: var(--ochre);
+            box-shadow: 0 0 16px rgba(194,106,42,0.7);
         }
+
+        /* TOOLTIP CITTÀ */
+        .city-tooltip {
+            position: absolute;
+            bottom: 20px; left: 50%;
+            transform: translateX(-50%);
+            background: rgba(26,20,16,0.9);
+            color: var(--paper);
+            padding: 6px 12px;
+            font-size: 0.7rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .city-dot:hover .city-tooltip { opacity: 1; }
+
+        /* HEADER */
+        header {
+            position: fixed; top: 0; right: 0;
+            padding: 1.2rem 2rem;
+            z-index: 5000;
+            display: flex; gap: 1.5rem; align-items: center;
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(10px);
+            border-bottom-left-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+
+        .logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.3rem; letter-spacing: 0.1em;
+            color: var(--ink); text-decoration: none;
+        }
+        .logo span { color: var(--ochre); }
+
+        .lang-btn {
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1.5px solid #ddd;
+            cursor: pointer; font-weight: 600;
+            font-size: 0.75rem;
+            transition: 0.3s; text-transform: uppercase;
+            background: white; color: #333;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .lang-btn.active {
+            background: var(--ochre);
+            color: white;
+            border-color: var(--ochre);
+        }
+
+        /* BACK BUTTON */
+        .back-btn {
+            position: fixed; bottom: 2rem; left: 2rem;
+            z-index: 5000;
+            display: flex; align-items: center; gap: 0.6rem;
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(10px);
+            color: var(--ink); text-decoration: none;
+            font-size: 0.7rem; letter-spacing: 0.15em;
+            text-transform: uppercase;
+            padding: 10px 18px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .back-btn:hover { background: var(--ochre); color: white; }
+
+        /* AUDIO */
+        #ambient-audio { display: none; }
     </style>
 </head>
 <body>
-<!-- HEADER
+
+<!-- HEADER -->
 <header>
-    <div class="socials" style="color: #333; font-size: 1.2rem; display: flex; gap: 15px;">
-        <i class="fab fa-facebook"></i>
-        <i class="fab fa-twitter"></i>
-        <i class="fab fa-instagram"></i>
-    </div>
+    <a href="/" class="logo"><span>Migr</span>art</a>
     <div>
         <button id="it-btn" class="lang-btn active" onclick="setLanguage('it')">IT</button>
         <button id="en-btn" class="lang-btn" onclick="setLanguage('en')">EN</button>
     </div>
-</header> -->
+</header>
+
+<!-- BACK -->
+<a href="/" class="back-btn">
+    <i class="fas fa-arrow-left"></i>
+    <span id="back-text">Home</span>
+</a>
 
 <!-- MAPPA -->
-<div id="map"></div>
+<div class="map-wrap" id="mapWrap">
+    <img 
+        src="{{ asset('images/map2.svg') }}" 
+        class="map-img" 
+        id="mapImg"
+        alt="Mappa Migrart"
+        draggable="false"
+    >
+</div>
 
-<!-- AUDIO AMBIENTALE -->
-<audio id="ambient-audio" src="{{ ('audio/ambient.mp3') }}" loop></audio>
+<svg class="map-svg" id="mapSvg">
+</svg>
 
-<script src="{{ asset('js/layers.js') }}"></script>
-<script src="{{ asset('js/cities.js') }}"></script>
-<script src="{{ asset('js/countries.js') }}"></script>
-
+<!-- AUDIO -->
+<audio id="ambient-audio" src="{{ asset('audio/ambient.mp3') }}" loop></audio>
 
 <script>
-
-        // Mappa le coordinate geografiche reali → pixel dell'SVG
-        // Calibra questi valori guardando l'immagine!
-    function geoToPixel(lat, lng) {
-    const latMin = 51.2,  latMax = 34.5;
-    const lngMin = 10.5,  lngMax = 32.8;
-
-    const svgW = 1754, svgH = 1240;
-
-    const x = ((lng - lngMin) / (lngMax - lngMin)) * svgW;
-    const y = ((lat - latMax) / (latMin - latMax)) * svgH;
-
-    return [y, x];
-}
-
-    window.geoToPixel = geoToPixel;
     // =========================
-    // INIZIALIZZAZIONE MAPPA
+    // CITTÀ con coordinate in percentuale
+    // calcolate da pixel: x% = px_x/1754*100, y% = px_y/1240*100
     // =========================
+    const cities = [
+    { id: 'istanbul', name: 'Istanbul', country: 'turkey', x: 65.4, y: 56.9 },
+    { id: 'izmir', name: 'Izmir', country: 'turkey', x: 59.6, y: 75.1 },
+    { id: 'lesvos', name: 'Lesvos', country: 'greece', x: 56.3, y: 70.8 },
+    { id: 'idomeni', name: 'Idomeni', country: 'greece', x: 45.9, y: 57.5 },
+    { id: 'harmanli', name: 'Harmanli', country: 'bulgaria', x: 59.2, y: 48.4 },
+    { id: 'dimitrovgrad', name: 'Dimitrovgrad', country: 'serbia', x: null, y: null },
+    { id: 'srebrenica', name: 'Srebrenica', country: 'bosnia', x: 36.7, y: 28.9 },
+    { id: 'bihac', name: 'Bihać', country: 'bosnia', x: 28.0, y: 21.6 },
+    { id: 'sarajevo', name: 'Sarajevo', country: 'bosnia', x: null, y: null },
+    { id: 'trieste', name: 'Trieste', country: 'italy', x: 21.8, y: 14.5 },
+];
 
-    window.addEventListener('load', () => {
-        console.log('🚀 Inizializzo Transit Traces...');
+    // Ordine del tragitto
+    const routeOrder = ['istanbul', 'izmir', 'lesvos', 'idomeni', 'harmanli', 'srebrenica', 'bihac', 'sarajevo', 'trieste'];
 
-        // Variabili globali
-        window.allPlaces = [];
-        window.currentLang = 'it';
+    // =========================
+    // CREA PUNTI CITTÀ
+    // =========================
+    const mapWrap = document.getElementById('mapWrap');
 
-        const mapEl = document.getElementById('map');
-        if (!mapEl) {
-            console.error('❌ Elemento #map non trovato!');
-            return;
-        }
+    cities.forEach(city => {
+        if (city.x === null) return; // salta città senza coordinate
 
-        // DOPO
-        const svgWidth = 1754;
-        const svgHeight = 1240;
+        const dot = document.createElement('div');
+        dot.className = 'city-dot';
+        dot.style.left = city.x + '%';
+        dot.style.top = city.y + '%';
+        dot.title = city.name;
 
-        const map = L.map('map', {
-            crs: L.CRS.Simple,       // coordinate piatte, niente sfericità
-            zoomControl: false,
-            minZoom: -2,
-            maxZoom: 4,
-            tap: false
-        });
-        window.map = map;
+        dot.innerHTML = `
+            <div class="city-dot-inner"></div>
+            <div class="city-tooltip">${city.name}</div>
+        `;
 
-        // Bounds dell'SVG in coordinate "pixel"
-        const bounds = [[0, 0], [svgHeight, svgWidth]];
-
-        // Carica l'SVG come layer immagine di sfondo
-        L.imageOverlay("{{ asset('images/MAP.svg') }}", bounds).addTo(map);
-
-
-        // Sostituisci map.fitBounds(...) con questo
-        const scaleX = window.innerWidth / svgWidth;
-        const scaleY = window.innerHeight / svgHeight;
-        const scale = Math.min(scaleX, scaleY); // max invece di min = copre tutto
-        const zoom = Math.log2(scale);
-
-        map.setView([svgHeight / 2, svgWidth / 2], zoom);
-        map.setMaxBounds([[-100, -100], [svgHeight + 100, svgWidth + 100]]);
-
-        L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-        // Layer group per i marker delle città
-        window.placesLayer = L.layerGroup().addTo(map);
-
-        console.log('✅ Mappa inizializzata');
-
-         // Audio ambientale
-        const audio = document.getElementById('ambient-audio');
-            document.addEventListener('click', () => {
-                audio.volume = 0.3;
-                audio.play().catch(e => console.warn('Audio bloccato:', e));
-            }, { once: true });
-
-        // Auto-init senza splash
-        window.mapEntered = true;
-
-       map.on('click', e => {
-            const px = `[${e.latlng.lat.toFixed(1)}, ${e.latlng.lng.toFixed(1)}]`;
-            console.log(`📍 Pixel SVG: y=${e.latlng.lat.toFixed(1)}, x=${e.latlng.lng.toFixed(1)}`);
-            navigator.clipboard.writeText(px);
-            console.log("✅ Coordinate pixel copiate!");
+        dot.addEventListener('click', () => {
+            window.location.href = `/citta/${city.id}`;
         });
 
-        window.dispatchEvent(new Event('mapReady')); // ← fuori dal click
-
-    }); // ← chiude il load
-
-        window.addEventListener('mapReady', () => {
-    if (window.mergeCitiesIntoPlaces) {
-        window.mergeCitiesIntoPlaces();
-    }
-
-    setTimeout(() => {
-        window.allPlaces.forEach(city => {
-            window.addIllustrationMarker(city.lat, city.lng, city);
-        });
-        console.log('✅ Marker creati:', window.allPlaces.length);
-
-        // LINEA DEL TRAGITTO
-        const routeOrder = ['istanbul', 'izmir', 'lesvos', 'dimitrovgrad', 'harmanli', 'srebrenica', 'bihac', 'sarajevo', 'trieste'];
-
-        const routeCoords = routeOrder
-            .map(id => window.allPlaces.find(c => c.id === id))
-            .filter(Boolean)
-            .map(c => c.pixel);
-
-         const polyline = L.polyline(routeCoords, {
-            color: '#c26a2a',
-            weight: 4,
-            opacity: 0.8,
-            dashArray: '6, 8',
-            lineJoin: 'round'
-        }).addTo(window.map);
-
-        // Hover effect
-        polyline.on('mouseover', function() {
-            this.setStyle({ weight: 6, opacity: 1, dashArray: null });
-            window.map.getContainer().style.cursor = 'pointer';
-        });
-
-        polyline.on('mouseout', function() {
-            this.setStyle({ weight: 4, opacity: 0.8, dashArray: '6, 8' });
-            window.map.getContainer().style.cursor = '';
-        });
-
-        // Click — trova la città più vicina al punto cliccato
-        polyline.on('click', function(e) {
-            let minDist = Infinity;
-            let closestCity = null;
-
-            window.allPlaces.forEach(city => {
-                if (!city.pixel) return;
-                const dy = city.pixel[0] - e.latlng.lat;
-                const dx = city.pixel[1] - e.latlng.lng;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < minDist) {
-                    minDist = dist;
-                    closestCity = city;
-                }
-            });
-
-            if (closestCity) {
-                window.goToCityPage(closestCity.country, closestCity.id);
-            }
-        });
-
-        console.log('✅ Tragitto disegnato');
-
-    }, 300);
+        mapWrap.appendChild(dot);
     });
 
-    function setLanguage(lang) {
-        window.currentLang = lang;
+    // LINEA TRAGITTO SVG
+    const svg = document.getElementById('mapSvg');
+    const mapImg = document.getElementById('mapImg');
 
-        const itBtn = document.getElementById('it-btn');
-        const enBtn = document.getElementById('en-btn');
+    const routeCities = routeOrder
+        .map(id => cities.find(c => c.id === id))
+        .filter(c => c && c.x !== null);
 
-        if (lang === 'it') {
-            itBtn.classList.add('active');
-            enBtn.classList.remove('active');
-        } else {
-            enBtn.classList.add('active');
-            itBtn.classList.remove('active');
-        }
+    // Crea le polyline una sola volta
+    const hitLine = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    hitLine.setAttribute('class', 'route-line-hit');
+    hitLine.addEventListener('click', e => {
+        const rect = svg.getBoundingClientRect();
+        const mx = (e.clientX - rect.left) / rect.width * 100;
+        const my = (e.clientY - rect.top) / rect.height * 100;
+        let minDist = Infinity, closest = null;
+        routeCities.forEach(c => {
+            const dist = Math.sqrt((c.x - mx) ** 2 + (c.y - my) ** 2);
+            if (dist < minDist) { minDist = dist; closest = c; }
+        });
+        if (closest) window.location.href = `/citta/${closest.id}`;
+    });
 
+    const visLine = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    visLine.setAttribute('class', 'route-line');
+
+    svg.appendChild(hitLine);
+    svg.appendChild(visLine);
+
+    // Aggiorna posizione punti in base alle dimensioni reali dell'immagine
+    function updateSvg() {
+        const rect = mapImg.getBoundingClientRect();
+        svg.setAttribute('viewBox', `0 0 ${rect.width} ${rect.height}`);
+
+        const points = routeCities
+            .map(c => `${c.x / 100 * rect.width},${c.y / 100 * rect.height}`)
+            .join(' ');
+
+        hitLine.setAttribute('points', points);
+        visLine.setAttribute('points', points);
     }
 
-    
+    mapImg.addEventListener('load', updateSvg);
+    window.addEventListener('resize', updateSvg);
+    updateSvg();
 
-    // RENDI GLOBALE
+        // =========================
+        // AUDIO
+        // =========================
+        const audio = document.getElementById('ambient-audio');
+        document.addEventListener('click', () => {
+            audio.volume = 0.3;
+            audio.play().catch(e => console.warn('Audio bloccato:', e));
+        }, { once: true });
+
+    // =========================
+    // LINGUA
+    // =========================
+    function setLanguage(lang) {
+        window.currentLang = lang;
+        document.getElementById('it-btn').classList.toggle('active', lang === 'it');
+        document.getElementById('en-btn').classList.toggle('active', lang === 'en');
+        document.getElementById('back-text').textContent = lang === 'it' ? 'Home' : 'Home';
+    }
+
     window.setLanguage = setLanguage;
+    setLanguage('it');
 
-    // INIZIALIZZAZIONE FINALE
-
-    window.addEventListener('mapReady', () => {
-    console.log('🎉 Sistema gerarchico pronto!');
-});
-            
-
-    console.log('✅ mappa.blade.php caricato completamente');
+    console.log('✅ Mappa Migrart caricata');
 </script>
 
 </body>
