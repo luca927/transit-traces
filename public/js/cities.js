@@ -166,7 +166,7 @@ const cities = [
         country: 'italy',
         lat: 45.6502,
         lng: 13.7861,
-        pixel: [1060.1, 379.8],
+        pixel: [ 17.4, 10.5],
         type: 'città',
         icon: '🏙️',
         description: 'Porta d\'ingresso in Italia, ultima tappa del viaggio',

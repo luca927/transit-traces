@@ -11,7 +11,7 @@
 
     <style>
         :root {
-            --ochre: #c26a2a;
+            --ochre: #3b2dfa;
             --paper: #f5f0e8;
             --ink: #1a1410;
         }
@@ -34,8 +34,9 @@
         /* IMMAGINE MAPPA */
         .map-img {
             width: 100%; height: 100%;
-            object-fit: contain;
-            object-position: center;
+            object-fit: cover;
+            object-position: center center; /* default */
+            object-position: left center;   /* ancora a sinistra */
             display: block;
             user-select: none;
             -webkit-user-drag: none;
@@ -52,10 +53,39 @@
         .route-line {
             fill: none;
             stroke: var(--ochre);
-            stroke-width: 2;
+            stroke-width: 2.5;
             stroke-linecap: round;
             stroke-linejoin: round;
-            opacity: 0.6;
+            opacity: 0;
+            stroke-dasharray: 6 8;
+            transition: opacity 0.6s ease;
+        }
+
+        /* la linea appare quando la mappa è "attiva" (hover o dopo il disegno iniziale) */
+        .map-wrap.route-visible ~ .map-svg .route-line,
+        .map-svg.route-visible .route-line {
+            opacity: 0.85;
+        }
+
+        /* effetto "formica in marcia" - il tratteggio scorre lungo il percorso */
+        .route-line.flowing {
+            animation: flowDash 25s linear infinite;
+        }
+
+        @keyframes flowDash {
+            to { stroke-dashoffset: -1000; }
+        }
+
+        /* disegno iniziale della linea (si traccia da sola al caricamento) */
+        .route-line.drawing {
+            stroke-dasharray: var(--path-length, 3000);
+            stroke-dashoffset: var(--path-length, 3000);
+            opacity: 0.85;
+            animation: drawRoute 3.5s ease forwards;
+        }
+
+        @keyframes drawRoute {
+            to { stroke-dashoffset: 0; }
         }
 
         .route-line-hit {
@@ -64,6 +94,11 @@
             stroke-width: 30;
             cursor: pointer;
             pointer-events: all;
+        }
+
+        .route-line-hit:hover ~ .route-line,
+        .route-line-hit:hover {
+            filter: drop-shadow(0 0 6px rgba(59,45,250,0.6));
         }
 
         /* PUNTI CITTÀ */
@@ -81,6 +116,12 @@
             border-radius: 50%;
             box-shadow: 0 0 8px rgba(194,106,42,0.4);
             transition: all 0.3s ease;
+            animation: dotPulse 2.8s ease-in-out infinite;
+        }
+
+        @keyframes dotPulse {
+            0%, 100% { box-shadow: 0 0 8px rgba(59,45,250,0.4); }
+            50% { box-shadow: 0 0 14px rgba(59,45,250,0.75); }
         }
 
         .city-dot:hover .city-dot-inner {
@@ -206,20 +247,21 @@
     // calcolate da pixel: x% = px_x/1754*100, y% = px_y/1240*100
     // =========================
     const cities = [
-    { id: 'istanbul', name: 'Istanbul', country: 'turkey', x: 65.4, y: 56.9 },
-    { id: 'izmir', name: 'Izmir', country: 'turkey', x: 59.6, y: 75.1 },
-    { id: 'lesvos', name: 'Lesvos', country: 'greece', x: 56.3, y: 70.8 },
-    { id: 'idomeni', name: 'Idomeni', country: 'greece', x: 45.9, y: 57.5 },
-    { id: 'harmanli', name: 'Harmanli', country: 'bulgaria', x: 59.2, y: 48.4 },
-    { id: 'dimitrovgrad', name: 'Dimitrovgrad', country: 'serbia', x: null, y: null },
-    { id: 'srebrenica', name: 'Srebrenica', country: 'bosnia', x: 36.7, y: 28.9 },
-    { id: 'bihac', name: 'Bihać', country: 'bosnia', x: 28.0, y: 21.6 },
+    { id: 'trieste', name: 'Trieste', country: 'italy', x: 19.4, y: 11.6 },
+    { id: 'bihac', name: 'Bihać', country: 'bosnia', x: 26.4, y: 20.7 },
+    { id: 'srebrenica', name: 'Srebrenica', country: 'bosnia', x: 35.7, y: 26.7 },
+    { id: 'dimitrovgrad', name: 'Dimitrovgrad', country: 'serbia', x: 42.5, y: 26.8 },
+    { id: 'harmanli', name: 'Harmanli', country: 'bulgaria', x: 59.4, y: 47.3 },
+    { id: 'idomeni', name: 'Idomeni', country: 'greece', x: 46.1, y: 59.5 },
+    { id: 'istanbul', name: 'Istanbul', country: 'turkey', x: 66.8, y: 57.2 },
+    { id: 'lesvos', name: 'Lesvos', country: 'greece', x: 57.2, y: 73.1 },
+    { id: 'izmir', name: 'Izmir', country: 'turkey', x: 60.5, y: 78.0 },
+    // Sarajevo non è disegnata come pin separato su questa mappa
     { id: 'sarajevo', name: 'Sarajevo', country: 'bosnia', x: null, y: null },
-    { id: 'trieste', name: 'Trieste', country: 'italy', x: 21.8, y: 14.5 },
 ];
 
-    // Ordine del tragitto
-    const routeOrder = ['istanbul', 'izmir', 'lesvos', 'idomeni', 'harmanli', 'srebrenica', 'bihac', 'sarajevo', 'trieste'];
+    // Ordine del tragitto (segue lo zig-zag disegnato: Turchia -> Grecia -> Bulgaria -> Serbia -> Bosnia -> Italia)
+    const routeOrder = ['istanbul', 'izmir', 'lesvos', 'idomeni', 'harmanli', 'dimitrovgrad', 'srebrenica', 'bihac', 'trieste'];
 
     // =========================
     // CREA PUNTI CITTÀ
@@ -247,7 +289,9 @@
         mapWrap.appendChild(dot);
     });
 
-    // LINEA TRAGITTO SVG
+    // =========================
+    // LINEA TRAGITTO SVG — curva morbida stile "Refugee Republic"
+    // =========================
     const svg = document.getElementById('mapSvg');
     const mapImg = document.getElementById('mapImg');
 
@@ -255,10 +299,40 @@
         .map(id => cities.find(c => c.id === id))
         .filter(c => c && c.x !== null);
 
-    // Crea le polyline una sola volta
-    const hitLine = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    // Crea gli elementi path (non più polyline: il path ci serve per le curve)
+    const hitLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     hitLine.setAttribute('class', 'route-line-hit');
-    hitLine.addEventListener('click', e => {
+
+    const visLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    visLine.setAttribute('class', 'route-line drawing flowing');
+
+    svg.appendChild(hitLine);
+    svg.appendChild(visLine);
+
+    // --- Converte una serie di punti in una curva morbida (Catmull-Rom -> Bezier) ---
+    function smoothPath(points) {
+        if (points.length < 2) return '';
+        let d = `M ${points[0].x},${points[0].y}`;
+
+        for (let i = 0; i < points.length - 1; i++) {
+            const p0 = points[i - 1] || points[i];
+            const p1 = points[i];
+            const p2 = points[i + 1];
+            const p3 = points[i + 2] || p2;
+
+            // tensione della curva: 6 = morbida, valori più bassi = più "tirata"
+            const cp1x = p1.x + (p2.x - p0.x) / 6;
+            const cp1y = p1.y + (p2.y - p0.y) / 6;
+            const cp2x = p2.x - (p3.x - p1.x) / 6;
+            const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+            d += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
+        }
+        return d;
+    }
+
+    // Trova la città più vicina a un punto lungo il tragitto (per il click)
+    function nearestCityOnClick(e) {
         const rect = svg.getBoundingClientRect();
         const mx = (e.clientX - rect.left) / rect.width * 100;
         const my = (e.clientY - rect.top) / rect.height * 100;
@@ -267,31 +341,49 @@
             const dist = Math.sqrt((c.x - mx) ** 2 + (c.y - my) ** 2);
             if (dist < minDist) { minDist = dist; closest = c; }
         });
+        return closest;
+    }
+
+    hitLine.addEventListener('click', e => {
+        const closest = nearestCityOnClick(e);
         if (closest) window.location.href = `/citta/${closest.id}`;
     });
-
-    const visLine = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-    visLine.setAttribute('class', 'route-line');
-
-    svg.appendChild(hitLine);
-    svg.appendChild(visLine);
 
     // Aggiorna posizione punti in base alle dimensioni reali dell'immagine
     function updateSvg() {
         const rect = mapImg.getBoundingClientRect();
         svg.setAttribute('viewBox', `0 0 ${rect.width} ${rect.height}`);
 
-        const points = routeCities
-            .map(c => `${c.x / 100 * rect.width},${c.y / 100 * rect.height}`)
-            .join(' ');
+        const pts = routeCities.map(c => ({
+            x: c.x / 100 * rect.width,
+            y: c.y / 100 * rect.height
+        }));
 
-        hitLine.setAttribute('points', points);
-        visLine.setAttribute('points', points);
+        const d = smoothPath(pts);
+        hitLine.setAttribute('d', d);
+        visLine.setAttribute('d', d);
+
+        // Imposta la lunghezza reale del percorso per l'animazione "si disegna da sola"
+        const length = visLine.getTotalLength();
+        visLine.style.setProperty('--path-length', length);
     }
 
     mapImg.addEventListener('load', updateSvg);
     window.addEventListener('resize', updateSvg);
     updateSvg();
+
+    // =========================
+    // TEMP: TROVA COORDINATE % CLICCANDO SULLA MAPPA
+    // Usalo per trovare x/y di Dimitrovgrad e Sarajevo, poi rimuovi il blocco
+    // =========================
+    mapImg.addEventListener('click', (e) => {
+        const rect = mapImg.getBoundingClientRect();
+        const xPct = ((e.clientX - rect.left) / rect.width * 100).toFixed(1);
+        const yPct = ((e.clientY - rect.top) / rect.height * 100).toFixed(1);
+        const coordStr = `x: ${xPct}, y: ${yPct}`;
+        console.log('📍 Coordinate copiate:', coordStr);
+        navigator.clipboard.writeText(coordStr);
+    });
 
         // =========================
         // AUDIO
