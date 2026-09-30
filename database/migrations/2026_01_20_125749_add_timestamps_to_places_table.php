@@ -11,9 +11,11 @@ return new class extends Migration
      */
   public function up()
 {
-    Schema::table('places', function (Blueprint $table) {
-        $table->timestamps();  // Aggiunge created_at, updated_at
-    });
+    if (!Schema::hasColumn('places', 'created_at')) {
+        Schema::table('places', function (Blueprint $table) {
+            $table->timestamps();  // Aggiunge created_at, updated_at
+        });
+    }
 }
 
 public function down()

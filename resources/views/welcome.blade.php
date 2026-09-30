@@ -54,18 +54,23 @@
             padding: 2rem 3rem;
             z-index: 2000;
             display: flex; justify-content: space-between; align-items: center;
-            mix-blend-mode: difference;
         }
 
         .logo {
             font-family: 'Bebas Neue', sans-serif;
             font-size: 1.6rem;
             letter-spacing: 0.1em;
-            color: var(--paper);
             text-decoration: none;
         }
 
-        .logo span { color: var(--ochre); }
+        .logo-migr {
+            color: var(--ochre);
+        }
+
+        .logo-art {
+            color: var(--ochre);   /* stesso arancione, niente più bianco/blend */
+            opacity: 0.55;         /* leggermente più tenue per distinguerlo da "Migr" */
+        }
 
         .lang-btns { display: flex; gap: 0; }
         .lang-btn {
@@ -566,7 +571,7 @@
 
 <!-- HEADER -->
 <header>
-    <a href="/" class="logo"><span>Migr</span>art</a>
+    <a href="/" class="logo"><span class="logo-migr">Migr</span><span class="logo-art">art</span></a>
     <div class="lang-btns">
         <button class="lang-btn active" id="btn-it" onclick="setLanguage('it')">IT</button>
         <button class="lang-btn" id="btn-en" onclick="setLanguage('en')">EN</button>
@@ -576,7 +581,7 @@
 <!-- HERO -->
 <section class="hero">
     <div class="hero-left">
-        <p class="hero-eyebrow" id="hero-eyebrow">Progetto artistico · Rotta balcanica</p>
+        <p class="hero-eyebrow" id="hero-eyebrow">Progetto artistico, Rotta balcanica</p>
         <h1 class="hero-title">
             Migr<br>art
             <em id="hero-subtitle-title">L'arte come incontro</em>

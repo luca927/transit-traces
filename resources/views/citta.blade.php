@@ -346,6 +346,10 @@
     const city = citiesData[cityId];
     let currentSlide = 0;
 
+    // VARIABILI GLOBALI CORRETTAMENTE INIZIALIZZATE
+    let prevCityUrl = null;
+    let nextCityUrl = null;
+
     if (city) {
         document.title = `Migrart — ${city.name}`;
 
@@ -396,7 +400,7 @@
             track.appendChild(slide);
         });
 
-        // Navigazione città prev/next
+        // Configurazione e salvataggio URL delle città adiacenti
         const idx = routeOrder.indexOf(cityId);
         const hasPrev = idx > 0;
         const hasNext = idx < routeOrder.length - 1;
@@ -404,12 +408,14 @@
         if (hasPrev) {
             const prevId = routeOrder[idx - 1];
             document.getElementById('cityPrevName').textContent = citiesData[prevId]?.name || prevId;
-            document.getElementById('cityPrev').href = `/citta/${prevId}`;
+            prevCityUrl = `/citta/${prevId}`; // Popola la variabile globale
+            document.getElementById('cityPrev').href = prevCityUrl;
         }
         if (hasNext) {
             const nextId = routeOrder[idx + 1];
             document.getElementById('cityNextName').textContent = citiesData[nextId]?.name || nextId;
-            document.getElementById('cityNext').href = `/citta/${nextId}`;
+            nextCityUrl = `/citta/${nextId}`; // Popola la variabile globale
+            document.getElementById('cityNext').href = nextCityUrl;
         }
 
         window._hasPrev = hasPrev;
@@ -424,20 +430,38 @@
         document.getElementById('counterCurrent').textContent = currentSlide + 1;
         document.getElementById('progressBar').style.width = `${((currentSlide + 1) / total) * 100}%`;
 
-        document.getElementById('arrowPrev').classList.toggle('visible', currentSlide > 0);
-        document.getElementById('arrowNext').classList.toggle('visible', currentSlide < total - 1);
+        // CORREZIONE: Le frecce laterali restano visibili se si può andare avanti/indietro anche di CITTÀ
+        document.getElementById('arrowPrev').classList.toggle('visible', currentSlide > 0 || window._hasPrev);
+        document.getElementById('arrowNext').classList.toggle('visible', currentSlide < total - 1 || window._hasNext);
 
-        // Città precedente — visibile solo sulla prima slide, solo se esiste
+        // I link testuali in basso
         document.getElementById('cityPrev').classList.toggle('visible', currentSlide === 0 && window._hasPrev);
-        // Città successiva — visibile solo sull'ultima slide, solo se esiste
         document.getElementById('cityNext').classList.toggle('visible', currentSlide === total - 1 && window._hasNext);
     }
 
     function goToSlide(index) {
         const total = city.media.length;
-        if (index < 0 || index >= total) return;
+
+        // Se vai oltre la prima foto a sinistra e c'è una città precedente
+        if (index < 0) {
+            if (window._hasPrev && prevCityUrl) {
+                window.location.href = prevCityUrl;
+            }
+            return;
+        }
+
+        // Se vai oltre l'ultima foto a destra e c'è una città successiva
+        if (index >= total) {
+            if (window._hasNext && nextCityUrl) {
+                window.location.href = nextCityUrl;
+            }
+            return;
+        }
+
+        // Navigazione interna standard alla città corrente
         const currentVideo = document.querySelectorAll('.slide')[currentSlide]?.querySelector('video');
         if (currentVideo) currentVideo.pause();
+        
         currentSlide = index;
         updateUI();
     }
@@ -446,14 +470,14 @@
         goToSlide(currentSlide + dir);
     }
 
-    // Keyboard
+    // Gestione Tastiera (Frecce direzionali)
     document.addEventListener('keydown', e => {
         if (e.key === 'ArrowRight' || e.key === 'ArrowDown') changeSlide(1);
         if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') changeSlide(-1);
         if (e.key === 'Escape') window.location.href = '/mappa';
     });
 
-    // Touch swipe
+    // Touch Swipe
     let touchStartX = 0;
     document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
     document.addEventListener('touchend', e => {
@@ -461,7 +485,7 @@
         if (Math.abs(diff) > 50) changeSlide(diff > 0 ? 1 : -1);
     });
 
-    // Scroll
+    // Rotella del mouse / Trackpad
     let scrollTimeout;
     document.addEventListener('wheel', e => {
         clearTimeout(scrollTimeout);
