@@ -26,22 +26,26 @@
         }
 
         /* CONTENITORE MAPPA */
-        .map-wrap {
+        .map-scroll {
             position: fixed; inset: 0;
-            width: 100vw; height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;   /* niente più scroll, mai */
         }
 
-        /* IMMAGINE MAPPA */
+        .map-wrap {
+            position: relative;
+            aspect-ratio: 1917 / 992;              /* proporzioni reali di map2.svg */
+            width: min(100vw, 100vh * 1917 / 992); /* prende lo spazio massimo che ci sta, in entrambe le direzioni */
+        }
+
         .map-img {
             width: 100%; height: 100%;
-            object-fit: cover;
-            object-position: center center; /* default */
-            object-position: left center;   /* ancora a sinistra */
             display: block;
             user-select: none;
             -webkit-user-drag: none;
         }
-
         /* SVG OVERLAY — linea tragitto */
         .map-svg {
             position: absolute; inset: 0;
@@ -203,6 +207,32 @@
         }
         .back-btn:hover { background: var(--ochre); color: white; }
 
+            @media (max-width: 600px) {
+        header {
+            padding: 0.8rem 1rem;
+            gap: 0.8rem;
+        }
+        .logo { font-size: 1.1rem; }
+        .lang-btn { padding: 5px 10px; font-size: 0.7rem; }
+
+        .back-btn {
+            bottom: 1rem; left: 1rem;
+            padding: 8px 14px;
+            font-size: 0.65rem;
+        }
+
+        .city-tooltip {
+            font-size: 0.65rem;
+            padding: 5px 10px;
+        }
+
+        .map-wrap {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1917 / 992;
+    }
+}
+
         /* AUDIO */
         #ambient-audio { display: none; }
     </style>
@@ -225,18 +255,13 @@
 </a>
 
 <!-- MAPPA -->
-<div class="map-wrap" id="mapWrap">
-    <img 
-        src="{{ asset('images/map2.svg') }}" 
-        class="map-img" 
-        id="mapImg"
-        alt="Mappa Migrart"
-        draggable="false"
-    >
+<div class="map-scroll" id="mapScroll">
+    <div class="map-wrap" id="mapWrap">
+        <img src="{{ asset('images/map2.svg') }}" class="map-img" id="mapImg" alt="Mappa Migrart" draggable="false">
+        <svg class="map-svg" id="mapSvg"></svg>
+    </div>
 </div>
 
-<svg class="map-svg" id="mapSvg">
-</svg>
 
 <!-- AUDIO -->
 <audio id="ambient-audio" src="{{ asset('audio/ambient.mp3') }}" loop></audio>
