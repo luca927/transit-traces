@@ -272,15 +272,15 @@
     // calcolate da pixel: x% = px_x/1754*100, y% = px_y/1240*100
     // =========================
     const cities = [
-    { id: 'trieste', name: 'Trieste', country: 'italy', x: 19.4, y: 11.6 },
-    { id: 'bihac', name: 'Bihać', country: 'bosnia', x: 26.4, y: 20.7 },
-    { id: 'srebrenica', name: 'Srebrenica', country: 'bosnia', x: 35.7, y: 26.7 },
+    { id: 'trieste', name: 'Trieste', country: 'italy', x: 22.2, y: 13.6 },
+    { id: 'bihac', name: 'Bihać', country: 'bosnia', x: 28.3, y: 24.2 },
+    { id: 'srebrenica', name: 'Srebrenica', country: 'bosnia', x: 37.1, y: 29.6 },
     { id: 'dimitrovgrad', name: 'Dimitrovgrad', country: 'serbia', x: 42.5, y: 26.8 },
     { id: 'harmanli', name: 'Harmanli', country: 'bulgaria', x: 59.4, y: 47.3 },
     { id: 'idomeni', name: 'Idomeni', country: 'greece', x: 46.1, y: 59.5 },
-    { id: 'istanbul', name: 'Istanbul', country: 'turkey', x: 66.8, y: 57.2 },
-    { id: 'lesvos', name: 'Lesvos', country: 'greece', x: 57.2, y: 73.1 },
-    { id: 'izmir', name: 'Izmir', country: 'turkey', x: 60.5, y: 78.0 },
+    { id: 'istanbul', name: 'Istanbul', country: 'turkey', x: 65.2, y: 55.0 },
+    { id: 'lesvos', name: 'Lesvos', country: 'greece', x: 56.1, y: 70.8 },
+    { id: 'izmir', name: 'Izmir', country: 'turkey', x: 59.5, y: 75.4 },
     // Sarajevo non è disegnata come pin separato su questa mappa
     { id: 'sarajevo', name: 'Sarajevo', country: 'bosnia', x: null, y: null },
 ];
